@@ -1,0 +1,2 @@
+senseauto-buildtools
+senseauto-3rdparty

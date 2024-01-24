@@ -1,0 +1,148 @@
+{
+    "no_leader_case": [
+        {
+            "case_name": "acc_40kph_to_80kph",
+            "comment": "自车40kph,加速到80kph",
+            "case_item": {
+                "idm_info": {
+                    "t_triger": [
+                        0.0,
+                        8.0
+                    ],
+                    "a_leader_init": 0,
+                    "v_leader_init": 0,
+                    "s_leader_init": 0,
+                    "v_refs": 80,
+                    "exist_leader": 0,
+                    "leader_length": 0
+                },
+                "ego_init_info": {
+                    "s": 0,
+                    "v": 40,
+                    "a": 0
+                }
+            }
+        },
+        {
+            "case_name":"dec_80kph_to_40kph",
+            "comment": "自车80kph,减速到80kph",
+            "case_item": {
+                "idm_info": {
+                    "t_triger": [
+                        0.0,
+                        6.0
+                    ],
+                    "a_leader_init": 0,
+                    "v_leader_init": 0,
+                    "s_leader_init": 0,
+                    "v_refs": 40,
+                    "exist_leader": 0,
+                    "leader_length": 0
+                },
+                "ego_init_info": {
+                    "s": 0,
+                    "v": 80,
+                    "a": 0
+                }
+            }
+        }
+    ],
+    "follow_move_car_case": [
+        {
+            "case_name": "follow_60kph",
+            "comment": "前车60kph,自车80kph,匀速",
+            "case_item": {
+                "idm_info": {
+                    "t_triger": [
+                        0.0,
+                        6.0
+                    ],
+                    "a_leader_init": 0,
+                    "v_leader_init": 40,
+                    "s_leader_init": 20,
+                    "v_refs": 80,
+                    "exist_leader": 1,
+                    "leader_length": 4.0
+                },
+                "ego_init_info": {
+                    "s": 0,
+                    "v": 80,
+                    "a": 0
+                }
+            }
+        },
+        {
+            "case_name": "follow_50kph",
+            "comment": "前车50kph,减速;自车80kph,匀速",
+            "case_item": {
+                "idm_info": {
+                    "t_triger": [
+                        0.0,
+                        6.0
+                    ],
+                    "v_leader": 13.89,
+                    "a_leader_init": -1,
+                    "s_leader_init": 50,
+                    "v_refs": 22.22,
+                    "exist_leader": 1,
+                    "leader_length": 4.0
+                },
+                "ego_init_info": {
+                    "s": 0,
+                    "v": 22.22,
+                    "a": 0
+                }
+            }
+        }
+    ],
+    "cut_in_case": [
+        {
+            "case_name": "cut_in_60kph",
+            "comment": "前车60kph,cutin;自车80kph,匀速",
+            "case_item": {
+                "idm_info": {
+                    "t_triger": [
+                        0.0,
+                        6.0
+                    ],
+                    "v_leader_init": 60,
+                    "a_leader_init": 0,
+                    "s_leader_init": 40,
+                    "v_refs": 80,
+                    "exist_leader": 1,
+                    "leader_length": 4
+                },
+                "ego_init_info": {
+                    "s": 0,
+                    "v": 80,
+                    "a": 0
+                }
+            }
+        }
+    ],
+    "follow_static_car_case": [
+        {
+            "case_name": "static_car_30m",
+            "comment": "",
+            "case_item": {
+                "idm_info": {
+                    "t_triger": [
+                        0.0,
+                        6.0
+                    ],
+                    "v_leader_init": 0,
+                    "a_leader_init": 0,
+                    "s_leader_init": 45,
+                    "v_refs": 80,
+                    "exist_leader": 1,
+                    "leader_length": 4
+                },
+                "ego_init_info": {
+                    "s": 0,
+                    "v": 60,
+                    "a": 0
+                }
+            }
+        }
+    ]
+}

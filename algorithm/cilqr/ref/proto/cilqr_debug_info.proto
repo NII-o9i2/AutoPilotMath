@@ -1,0 +1,57 @@
+// Copyright (C) 2020 by SenseTime Group Limited. All rights reserved.
+// Zhongyang Zang <zhushengfa@senseauto.com>
+
+syntax = "proto3";
+
+package senseAD.planning.cilqr;
+
+message CilqrState {
+    optional double x = 1;
+    optional double y = 2;
+    optional double theta = 3;
+    optional double v = 4;
+    optional double omega = 5;
+    optional double a = 6;
+}
+
+message Control {
+    optional double jerk = 1;
+    optional double omega_rate = 2;
+}
+
+message BoundPoint{
+    optional double x = 1;
+    optional double y = 2;
+}
+
+message BoundLine{
+    repeated BoundPoint left_bound = 1;
+    repeated BoundPoint right_bound = 2;
+}
+
+message Box {
+    optional double center_x = 1;
+    optional double center_y = 2;
+    optional double heading = 3;
+    optional double length = 4;
+    optional double width = 5;
+}
+
+message CilqrTrajectory {
+    repeated CilqrState state = 1;
+    repeated Control ctrl = 2;
+}
+
+message DynamicBox{
+    optional int32 id = 1;
+    repeated Box dynamic_obs = 2;
+}
+
+message CilqrDebugInfo {
+    repeated CilqrTrajectory trajectory = 1;
+    optional CilqrTrajectory solution = 2;
+    optional CilqrTrajectory target_trajectory = 3;
+    repeated Box static_obstacles = 4;
+    optional BoundLine bound = 5;
+    repeated DynamicBox dynamic_obstacles = 6;
+}

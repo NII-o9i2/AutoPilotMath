@@ -1,0 +1,18 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "python": "python3",// 我使用的是python 3.10
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": ["-s" ,"/home/sensetime/ws/rscl_x86/senseauto-pilot-decision/pilot_decision_sdk/scripts/planning_test_xviz.00000.rsclbag" ,"-o", "~/ws/planning_xviz3.html"], // 传参,注意最好写绝对路径
+            "justMyCode": true
+        }
+    ]
+}

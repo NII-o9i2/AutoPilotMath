@@ -1,0 +1,276 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5
+					],
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "math_common",
+					"jsonFile" : "directory-math_common-Debug-c8daf46009bc83d7d9f6.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "math_common",
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"build" : "dcp_tree",
+					"jsonFile" : "directory-dcp_tree-Debug-cd0d99f50c253294f48b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 2,
+					"source" : "dcp_tree",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "idm",
+					"jsonFile" : "directory-idm-Debug-821a335a2540de7c4cac.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 3,
+					"source" : "idm",
+					"targetIndexes" : 
+					[
+						2,
+						6
+					]
+				},
+				{
+					"build" : "env_simulator",
+					"jsonFile" : "directory-env_simulator-Debug-d5a2ccada81a1beab70b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 4,
+					"source" : "env_simulator",
+					"targetIndexes" : 
+					[
+						1,
+						5,
+						8
+					]
+				},
+				{
+					"build" : "cilqr",
+					"jsonFile" : "directory-cilqr-Debug-eddce97a33521a166bb3.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 5,
+					"source" : "cilqr",
+					"targetIndexes" : 
+					[
+						3,
+						7,
+						9
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "algorithm"
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "math_common",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2
+					],
+					"name" : "dcp_tree",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						3
+					],
+					"name" : "idm_pybind",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						2,
+						6
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						4
+					],
+					"name" : "env_simulator",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1,
+						5,
+						8
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						5
+					],
+					"name" : "ilqr_sim",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						3,
+						7,
+						9
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 2,
+					"id" : "dcp_tree::@86f5804ad7f355d414e8",
+					"jsonFile" : "target-dcp_tree-Debug-c49a35e45ceb5557b1bf.json",
+					"name" : "dcp_tree",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "env_simulator::@e17d16c9e52d3dedeaea",
+					"jsonFile" : "target-env_simulator-Debug-630fb3e41df8a0717bc6.json",
+					"name" : "env_simulator",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "idm::@328b189aa56714df6efa",
+					"jsonFile" : "target-idm-Debug-d3d2afcec38316e5f197.json",
+					"name" : "idm",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "ilqr_sim::@65a0a7a6ff54b9835b80",
+					"jsonFile" : "target-ilqr_sim-Debug-c8ea4148440b8dbcf7fa.json",
+					"name" : "ilqr_sim",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "math_common::@ec0e3e9706cebacbc0d9",
+					"jsonFile" : "target-math_common-Debug-4209b644d9d9adc8dfa7.json",
+					"name" : "math_common",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "pybind_env_simulator::@e17d16c9e52d3dedeaea",
+					"jsonFile" : "target-pybind_env_simulator-Debug-c704d87d2f06ef821a38.json",
+					"name" : "pybind_env_simulator",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "pybind_idm::@328b189aa56714df6efa",
+					"jsonFile" : "target-pybind_idm-Debug-6be470e072912ca352d4.json",
+					"name" : "pybind_idm",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "pybind_ilqr::@65a0a7a6ff54b9835b80",
+					"jsonFile" : "target-pybind_ilqr-Debug-49a7a09c7b141da67853.json",
+					"name" : "pybind_ilqr",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "test_env_simulator::@e17d16c9e52d3dedeaea",
+					"jsonFile" : "target-test_env_simulator-Debug-e319fd985d51c9e53033.json",
+					"name" : "test_env_simulator",
+					"projectIndex" : 4
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "test_ilqr::@65a0a7a6ff54b9835b80",
+					"jsonFile" : "target-test_ilqr-Debug-fbd88604ed4ea5821204.json",
+					"name" : "test_ilqr",
+					"projectIndex" : 5
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/SENSETIME/fengxiaotong/ws/xviz/common_math/algorithm/cmake-build-debug",
+		"source" : "/home/SENSETIME/fengxiaotong/ws/xviz/common_math/algorithm"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 5
+	}
+}
