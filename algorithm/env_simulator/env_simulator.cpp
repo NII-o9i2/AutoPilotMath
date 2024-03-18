@@ -80,24 +80,24 @@ double EnvSimulator::get_lane_s(const MathUtils::Point2D &pos) {
   return lane.get_s(pos);
 }
 
-MathUtils::Point2D
-EnvSimulator::get_nearest_point(const MathUtils::Point2D &pos) {
-//  auto &lane = lane_manager_.get_lane(0);
-//  auto &center_points = lane.get_center_points();
-//  double min_dis = 0.0;
-//  MathUtils::Point2D res;
-//  res = center_points.front();
-//  min_dis =
-//      (res.x - pos.x) * (res.x - pos.x) + (res.y - pos.y) * (res.y - pos.y);
-//  for (auto &point : center_points) {
-//    double tmp = (point.x - pos.x) * (point.x - pos.x) +
-//                 (point.y - pos.y) * (point.y - pos.y);
-//    if (tmp < min_dis) {
-//      min_dis = tmp;
-//      res = point;
-//    }
-//  }
-//  return res;
+MathUtils::Point2D EnvSimulator::get_nearest_point(
+    const MathUtils::Point2D &pos) {
+  //  auto &lane = lane_manager_.get_lane(0);
+  //  auto &center_points = lane.get_center_points();
+  //  double min_dis = 0.0;
+  //  MathUtils::Point2D res;
+  //  res = center_points.front();
+  //  min_dis =
+  //      (res.x - pos.x) * (res.x - pos.x) + (res.y - pos.y) * (res.y - pos.y);
+  //  for (auto &point : center_points) {
+  //    double tmp = (point.x - pos.x) * (point.x - pos.x) +
+  //                 (point.y - pos.y) * (point.y - pos.y);
+  //    if (tmp < min_dis) {
+  //      min_dis = tmp;
+  //      res = point;
+  //    }
+  //  }
+  //  return res;
   auto &lane = lane_manager_.get_lane(0);
   auto &center_points = lane.get_center_points();
   double min_dis = 0.0;
@@ -107,22 +107,22 @@ EnvSimulator::get_nearest_point(const MathUtils::Point2D &pos) {
       (res.x - pos.x) * (res.x - pos.x) + (res.y - pos.y) * (res.y - pos.y);
   int index_left = 0;
   int index_right = 0;
-  for (int i = 0; i < center_points.size();i++) {
+  for (int i = 0; i < center_points.size(); i++) {
     double tmp = (center_points[i].x - pos.x) * (center_points[i].x - pos.x) +
-        (center_points[i].y - pos.y) * (center_points[i].y - pos.y);
+                 (center_points[i].y - pos.y) * (center_points[i].y - pos.y);
     if (tmp < min_dis) {
       min_dis = tmp;
       res = center_points[i];
       index_left = i;
     }
   }
-  if (index_left + 1 < center_points.size()){
+  if (index_left + 1 < center_points.size()) {
     index_right = index_left + 1;
   } else {
     index_right = index_left;
     index_left--;
   }
-  if (index_left < 0){
+  if (index_left < 0) {
     return res;
   }
   double pa_x = pos.x - center_points[index_left].x;
@@ -130,52 +130,57 @@ EnvSimulator::get_nearest_point(const MathUtils::Point2D &pos) {
   double ba_x = center_points[index_right].x - center_points[index_left].x;
   double ba_y = center_points[index_right].y - center_points[index_left].y;
 
-  double ba_len = std::hypot(ba_x,ba_y);
-  if (ba_len < 1e-5){
+  double ba_len = std::hypot(ba_x, ba_y);
+  if (ba_len < 1e-5) {
     return res;
   }
   double ca_len = (pa_x * ba_x + pa_y * ba_y) / ba_len;
-  res.x =  center_points[index_left].x + ba_x * ca_len / ba_len;
-  res.y =  center_points[index_left].y + ba_y * ca_len / ba_len;
+  res.x = center_points[index_left].x + ba_x * ca_len / ba_len;
+  res.y = center_points[index_left].y + ba_y * ca_len / ba_len;
 
   return res;
 }
 
-PointInfo EnvSimulator::get_nearest_point_info(const MathUtils::Point2D &pos){
+PointInfo EnvSimulator::get_nearest_point_info(const MathUtils::Point2D &pos) {
   auto &lane = lane_manager_.get_lane(0);
   auto &center_points = lane.get_center_points();
   double min_dis = 0.0;
   PointInfo res;
   // get point
   res.point = center_points.front();
-  min_dis =
-      (res.point.x - pos.x) * (res.point.x - pos.x) + (res.point.y - pos.y) * (res.point.y - pos.y);
+  min_dis = (res.point.x - pos.x) * (res.point.x - pos.x) +
+            (res.point.y - pos.y) * (res.point.y - pos.y);
   int index_left = 0;
   int index_right = 0;
-  for (int i = 0; i < center_points.size();i++) {
+  for (int i = 0; i < center_points.size(); i++) {
     double tmp = (center_points[i].x - pos.x) * (center_points[i].x - pos.x) +
-        (center_points[i].y - pos.y) * (center_points[i].y - pos.y);
+                 (center_points[i].y - pos.y) * (center_points[i].y - pos.y);
     if (tmp < min_dis) {
       min_dis = tmp;
       res.point = center_points[i];
       index_left = i;
     }
   }
-  if (index_left + 1 < center_points.size()){
+  if (index_left + 1 < center_points.size()) {
     index_right = index_left + 1;
   } else {
     index_right = index_left;
     index_left--;
   }
-  if (index_left < 0){
-    std::cout << "line too short!!"<< std::endl;
+  if (index_left < 0) {
+    std::cout << "line too short!!" << std::endl;
     return res;
   }
-  auto& curvature = lane.get_curva();
-  if (std::fabs(center_points[index_right].x - center_points[index_left].x) < 1e-6){
-    res.theta = center_points[index_right].y > center_points[index_left].y ? 0.5 * M_PI : - 0.5 * M_PI;
-  }else{
-    res.theta = std::atan((center_points[index_right].y - center_points[index_left].y)/(center_points[index_right].x - center_points[index_left].x));
+  auto &curvature = lane.get_curva();
+  if (std::fabs(center_points[index_right].x - center_points[index_left].x) <
+      1e-6) {
+    res.theta = center_points[index_right].y > center_points[index_left].y
+                    ? 0.5 * M_PI
+                    : -0.5 * M_PI;
+  } else {
+    res.theta =
+        std::atan((center_points[index_right].y - center_points[index_left].y) /
+                  (center_points[index_right].x - center_points[index_left].x));
   }
   res.curvature = curvature[index_right];
   double pa_x = pos.x - center_points[index_left].x;
@@ -183,16 +188,15 @@ PointInfo EnvSimulator::get_nearest_point_info(const MathUtils::Point2D &pos){
   double ba_x = center_points[index_right].x - center_points[index_left].x;
   double ba_y = center_points[index_right].y - center_points[index_left].y;
 
+  res.is_on_left = ba_x * pa_y - ba_y * pa_x > 0;
 
-  res.is_on_left = ba_x * pa_y -ba_y * pa_x >0;
-
-  double ba_len = std::hypot(ba_x,ba_y);
-  if (ba_len < 1e-5){
+  double ba_len = std::hypot(ba_x, ba_y);
+  if (ba_len < 1e-5) {
     return res;
   }
   double ca_len = (pa_x * ba_x + pa_y * ba_y) / ba_len;
-  res.point.x =  center_points[index_left].x + ba_x * ca_len / ba_len;
-  res.point.y =  center_points[index_left].y + ba_y * ca_len / ba_len;
+  res.point.x = center_points[index_left].x + ba_x * ca_len / ba_len;
+  res.point.y = center_points[index_left].y + ba_y * ca_len / ba_len;
 
   return res;
 }
@@ -243,4 +247,4 @@ double EnvSimulator::get_next_point_curva(const MathUtils::Point2D &pos) {
   }
   return curva[index];
 }
-} // namespace EnvSim
+}  // namespace EnvSim

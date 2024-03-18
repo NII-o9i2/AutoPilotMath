@@ -9,7 +9,7 @@
 
 namespace EnvSim {
 class Lane {
-public:
+ public:
   Lane(const int &_relative_id,
        const std::vector<MathUtils::Point2D> &_raw_points)
       : raw_center_points_(_raw_points), relative_id_(_relative_id){};
@@ -17,8 +17,8 @@ public:
 
   const int &get_id() const { return relative_id_; };
 
-  const MathUtils::Point2D
-  frenet_to_cartesian(const MathUtils::Point2D &frenet_point) const;
+  const MathUtils::Point2D frenet_to_cartesian(
+      const MathUtils::Point2D &frenet_point) const;
 
   const std::vector<MathUtils::Point2D> &get_center_points() const {
     return center_points_;
@@ -28,21 +28,21 @@ public:
 
   double get_s(const MathUtils::Point2D &point) const;
 
-private:
+ private:
   void update_curvature();
   void update_s();
 
-private:
+ private:
   std::vector<MathUtils::Point2D> center_points_;
   std::vector<MathUtils::Point2D> raw_center_points_;
   std::vector<double> center_points_s_;
   // -1 left 0 middle 1 right
   int relative_id_ = 0;
-  std::vector<double> curva_; // kappa for every point
+  std::vector<double> curva_;  // kappa for every point
 };
 
 class LaneManager {
-public:
+ public:
   void update_lanes(const std::vector<Lane> &lanes);
   std::vector<std::vector<MathUtils::Point2D>> get_all_lanes_center_points();
 
@@ -54,9 +54,9 @@ public:
     }
   }
 
-private:
+ private:
   std::vector<Lane> lanes_;
 };
-} // namespace EnvSim
+}  // namespace EnvSim
 
-#endif // ALGORITHM_ALGORITHM_ENV_SIMULATER_LANE_H_
+#endif  // ALGORITHM_ALGORITHM_ENV_SIMULATER_LANE_H_

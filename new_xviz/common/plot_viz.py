@@ -31,6 +31,7 @@ class XvizPlotBase:
         self.required_channel_list_ = []
         self.read_bag_flag_ = False
         self.data_frame_ = {}
+        self.checkbox_groups_ = {}
         pass
 
     def add_required_channel(self,channel):
@@ -82,7 +83,10 @@ class XvizPlotBase:
             self.data_frame_[channel_name] = {}
 
             # add data_key here if don't want it to be processed by nested_key  
-            list_data_key_not_process_nested = ['lane_debug', 'lat_lon_decider_debug']
+            list_data_key_not_process_nested = ['lane_debug','lat_lon_decider_debug','positionEnu',
+                                                'currentReflineEnu','targetReflineEnu', 'ego_traj',
+                                                'lat_lon_motion_debug',
+                                                'lc_lon_search_debug', 'lc_lat_search_debug']
 
             for channel_msg_index, channel_entry in enumerate(channel_entries):
                 for time_key, sub_dict in channel_entry.items():
@@ -140,9 +144,12 @@ class XvizPlotBase:
             self.match_timestamp()
             self.construct_msg()
 
-    def get_data_frame_at_datakey(self, _key_name):
+    def get_data_frame_at_datakey(self, _key_name, _channel_name = None):
         result = {}
         for channel_name, channel_dict in self.data_frame_.items():
+            if _channel_name != None:
+                    if _channel_name != channel_name:
+                        continue
             for data_key, data_dict in channel_dict.items():
                 if data_key == _key_name:
                     result = data_dict
@@ -155,8 +162,14 @@ class XvizPlotBase:
         self.data_frame_[channel_name][key_name] = data_frame
 
     def add_layer_to_figure(self, fig, args):
+        if 'data_key' not in args:
+            print('add_layer_to_figure: can not find data_key in args')
+            return
         data_key = args['data_key']
         data_frame = self.get_data_frame_at_datakey(data_key)
+        if not data_frame:
+            print('add_layer_to_figure: data_frame not valid')
+            return
         PlotUtils.add_layer_to_figure_with_dataframe(fig, data_frame, args)
 
     def activate_figure_option(self):
@@ -167,8 +180,8 @@ class XvizPlotBase:
         return times
 
     def add_slider(self):
-        times = self.get_common_time_list()
-        _end = max(times)
+        # times = self.get_common_time_list()
+        _end = 39.9
         self.time_slider_ = Slider(start=0.0, end=_end, 
                                    value=0.0, step=0.1, title="Time")
         return

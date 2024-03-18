@@ -15,6 +15,9 @@ from common.layer_viz import *
 class PlotUtils:
     @staticmethod
     def add_layer_to_figure_with_dataframe(fig, data_frame, args):
+            if 'plot_type' not in args:
+                print('add_layer_to_figure_with_dataframe: plot_type not in args')
+                return
             plot_type = args['plot_type']
             args['data_frame'] = data_frame
             
@@ -27,6 +30,8 @@ class PlotUtils:
                 fig.add_layer(LayerIndexCircle, args)
             if plot_type == 'scatter':
                 fig.add_layer(LayerScatter, args)
+            if plot_type == 'scatterheading':
+                fig.add_layer(LayerScatterHeading, args)
             if plot_type == 'line':
                 fig.add_layer(LayerLine, args)
             if plot_type == 'line_scatter':
@@ -36,8 +41,14 @@ class PlotUtils:
                 fig.add_layer(LayerSinglePoint, args)
             if plot_type == 'multi_polygon':
                 fig.add_layer(LayerMultiPolygon, args)
+            if plot_type == 'multi_polygon_id':
+                fig.add_layer(LayerMultiPolygonId, args)
             if plot_type == 'multi_ellipse':
                 fig.add_layer(LayerMultiEllipse, args)
+            if plot_type == 'scatter_lc_lon_search_sample':
+                fig.add_layer(LayerScatterLcLonSearchSample, args)
+            if plot_type == 'multi_polygon_lc_lon_search_obs':
+                fig.add_layer(LayerMultiPolygonLcLonSearchObs, args)
     
     @staticmethod
     def activate_figure_option(figs):

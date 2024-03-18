@@ -1,0 +1,14 @@
+{
+  "name": "test_case_corner_case_1",
+  "lanes":[
+    {
+      "relative_id": 0,
+      "center_points": [
+        [0.0, 0.0],
+        [-41.0, 8.0],
+        [-88.0, 16.0],
+        [-171.0, 26.0]
+      ]
+    }
+  ]
+}

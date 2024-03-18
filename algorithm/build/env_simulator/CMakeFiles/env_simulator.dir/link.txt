@@ -1,0 +1,2 @@
+/usr/bin/ar qc libenv_simulator.a  CMakeFiles/env_simulator.dir/spline.cpp.o CMakeFiles/env_simulator.dir/lane.cpp.o CMakeFiles/env_simulator.dir/obstacle.cpp.o CMakeFiles/env_simulator.dir/env_simulator.cpp.o CMakeFiles/env_simulator.dir/free_space.cpp.o
+/usr/bin/ranlib libenv_simulator.a

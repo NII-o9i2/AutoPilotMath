@@ -34,6 +34,8 @@ class XvizPlotLatLonDecider(XvizPlotBase):
         self.build_lat_lon_decider_success_traj_omega_data_frame()
         self.build_lat_lon_decider_success_traj_vel_data_frame()
         self.build_lat_lon_decider_success_traj_theta_data_frame()
+        # self.build_ego_lane_center_dist_to_left_data_frame()
+        # self.build_ego_lane_center_dist_to_right_data_frame()
 
         # 主图, 包含 obs_polygon, obs_traj, ego_polygon, lane
         main_figure_viz = FigureViz('Main_Figure', 'X', 'Y', width=750, height =900)
@@ -132,7 +134,7 @@ class XvizPlotLatLonDecider(XvizPlotBase):
         callback_omega = search_res_omega_figure_viz.get_callback_list()
 
         # search res traj theta相关
-        search_res_theta_figure_viz = FigureViz('Search_Res_Vel', 'Index', 'Data/radian', x_range = [-1,30],y_range = [-3.14, 3.14], 
+        search_res_theta_figure_viz = FigureViz('Search_Res_Theta', 'Index', 'Data/radian', x_range = [-1,30],y_range = [-3.14, 3.14], 
                                          width=600 ,height = 200, match_aspect = False)
         self.add_layer_to_figure(search_res_theta_figure_viz, args=dict(data_key='lat_lon_decider_success_traj_theta', \
                                                                 plot_type='index_line_circle', color='blue',  \
@@ -141,7 +143,8 @@ class XvizPlotLatLonDecider(XvizPlotBase):
         callback_theta = search_res_theta_figure_viz.get_callback_list()
 
         # 汇合所有的callback
-        all_callback = [*callback_main_fig, *callback_nop_count, *callback_acc, *callback_omega, *callback_vel, *callback_theta]
+        all_callback = [*callback_main_fig, *callback_nop_count, *callback_acc, 
+                        *callback_omega, *callback_vel, *callback_theta]
 
         # 创建滑块        
         self.add_slider()
@@ -330,6 +333,7 @@ class XvizPlotLatLonDecider(XvizPlotBase):
 
         ratio = [3, 1, -1, -3]
         l_4 = 0.125 * 4.886
+        l_body_center_to_rear_wheel_center_ = 1.405
         
         for one_frame in data_frame:
             one_frame_new = {}
@@ -343,9 +347,13 @@ class XvizPlotLatLonDecider(XvizPlotBase):
                 if len(failed_path) == 0:
                     continue
                 point = failed_path[-1]
+                cos_theta =  math.cos(point['theta'])
+                sin_theta =  math.sin(point['theta'])
+                body_center_x = point['position']['x'] + l_body_center_to_rear_wheel_center_ * cos_theta
+                body_center_y = point['position']['y'] + l_body_center_to_rear_wheel_center_ * sin_theta
                 for r in ratio:
-                        x.append(point['position']['x'] + r * l_4 * math.cos(point['theta']))
-                        y.append(point['position']['y'] + r * l_4 * math.sin(point['theta']))
+                        x.append(body_center_x + r * l_4 * cos_theta)
+                        y.append(body_center_y + r * l_4 * sin_theta)
             one_data_new = {
                     "x": x,
                     "y": y
@@ -451,8 +459,6 @@ class XvizPlotLatLonDecider(XvizPlotBase):
         x = []
         y = []
 
-        ego_width = 2.2
-        ego_length = 5.0
         half_width = 0.5 * ego_width
         half_length = 0.5 * ego_length
         dist_center_to_corner = math.sqrt(half_width**2 + half_length**2)
@@ -642,10 +648,60 @@ class XvizPlotLatLonDecider(XvizPlotBase):
             data_frame_new.append(one_frame_new)
         self.set_data_frame_at_datakey('point_channel', 'right_lane_center_point', data_frame_new)
     
+    def build_ego_lane_center_dist_to_left_data_frame(self):
+        data_frame = self.get_data_frame_at_datakey('lane_debug')
+        data_frame_new = []
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            one_data = one_frame['data']
+            x = []
+            y = []
+            for lane_debug in one_data:
+                if lane_debug['id'] == 0:
+                    for point in lane_debug['lane_points']:
+                        x.append(point['left_boundry']['dist_to_boundry'])
+            y = (list(range(len(x))))
+            one_data_new = {
+                    "x": x,
+                    "y": y
+                    }
+            one_frame_new['data'] = one_data_new
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey('point_channel', 'ego_lane_center_dist_to_left', data_frame_new)
+    
+    def build_ego_lane_center_dist_to_right_data_frame(self):
+        data_frame = self.get_data_frame_at_datakey('lane_debug')
+        data_frame_new = []
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            one_data = one_frame['data']
+            x = []
+            y = []
+            for lane_debug in one_data:
+                if lane_debug['id'] == 0:
+                    for point in lane_debug['lane_points']:
+                        x.append(point['right_boundry']['dist_to_boundry'])
+            y = (list(range(len(x))))
+            one_data_new = {
+                    "x": x,
+                    "y": y
+                    }
+            one_frame_new['data'] = one_data_new
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey('point_channel', 'ego_lane_center_dist_to_right', data_frame_new)
+    
     def show2html(self):
         output_file(self.output_)
         show(column(self.time_slider_,
-                    row(self.figs_['main_fig'], 
+                    row(column(self.figs_['main_fig'],
+                                # self.figs_['lane_center_dist_to_boundary']
+                                ), 
                         column(self.figs_['nop_count'],
                                self.figs_['search_res_acc'],
                                self.figs_['search_res_vel'],

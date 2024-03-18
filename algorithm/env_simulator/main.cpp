@@ -12,8 +12,9 @@ using namespace Eigen;
 using namespace std;
 int main() {
   EnvSim::EnvSimulator env_sim;
-  env_sim.update_case_data("/home/sensetime/data/ws/common_math_v2/common_math/"
-                           "algorithm/env_simulator/data/"
-                           "freespace_case_1.json");
+  env_sim.update_case_data(
+      "/home/SENSETIME/fengxiaotong/ws/xviz/common_math/"
+      "algorithm/env_simulator/data/"
+      "test_case_1_corner_case.json");
   return 0;
 }

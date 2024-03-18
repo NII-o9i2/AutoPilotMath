@@ -4,11 +4,11 @@
 #include "utils.h"
 #include <iostream>
 
-namespace MathUtils{
+namespace MathUtils {
 
 double CalculateRadius(const Point2D& first_point,
-                              const Point2D& second_point,
-                              const Point2D& third_point) {
+                       const Point2D& second_point,
+                       const Point2D& third_point) {
   double radius = 10000000;
   double A1, A2, B1, B2, C1, C2, denominator;
   A1 = first_point.x - second_point.x;
@@ -36,11 +36,10 @@ double CalculateRadius(const Point2D& first_point,
               std::atan2(third_point.y - center.y, third_point.x - center.x)
           ? radius
           : -radius;
-//   std::cout << "radius " << radius << " center "
-//             << center << " point_1 " << first_point 
-//             << " point_2 " << second_point << " point_3 " << third_point
-//             << std::endl;
+  //   std::cout << "radius " << radius << " center "
+  //             << center << " point_1 " << first_point
+  //             << " point_2 " << second_point << " point_3 " << third_point
+  //             << std::endl;
   return radius;
 }
-
 }

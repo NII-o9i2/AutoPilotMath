@@ -1,9 +1,9 @@
 import os
 import sys
 from bokeh.palettes import Magma, Viridis
-sys.path.append(os.getcwd() + '/py_lib')
+sys.path.append(os.getcwd() + '../py_lib')
 from cilqr_param import *
-sys.path.append('../../new_xviz')
+sys.path.append('../../../new_xviz')
 from common.figure_viz import * 
 from common.layer_viz import * 
 from common.plot_util import * 

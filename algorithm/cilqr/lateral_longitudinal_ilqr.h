@@ -4,12 +4,20 @@
 
 #ifndef ALGORITHM_ALGORITHM_CILQR_LATERAL_LONGITUDINAL_ILQR_H_
 #define ALGORITHM_ALGORITHM_CILQR_LATERAL_LONGITUDINAL_ILQR_H_
-#include "ilqr_solver.h"
-#include "ilqr_tree_solver.h"
-#include "init_traj_generator.h"
+#include "core/ilqr_tree_solver.h"
+#include "core/init_traj_generator.h"
 #include "utils.h"
 
-using PlanningPoint = ILQR::PlanningPoint;
+struct PlanningPoint {
+  MathUtils::Point2D position;
+  double theta = 0.0;
+  double velocity = 0.0;
+  double acceleration = 0.0;
+  double omega = 0.0;  // d(theta) / dt
+  double curva = 0.0;  // omega / velocity = curva
+  double jerk = 0.0;
+  double omega_dot = 0.0;
+};
 
 struct LatLongiMotionIterationStatistic {
   std::vector<PlanningPoint> trajectory;
@@ -22,7 +30,8 @@ struct LateralLongitudinalMotionInput {
 };
 
 class LateralLongitudinalMotion {
-public:
+ public:
+  void init(const std::string &file_path, const PlanningPoint &planning_point, bool enable_dodge);
   void init(const std::string &file_path, const PlanningPoint &planning_point);
 
   const EnvSim::EnvSimulator &get_env() const { return input_.env; }
@@ -38,47 +47,51 @@ public:
   const std::vector<std::vector<PlanningPoint>> &get_trajectory_tree() const {
     return trajectory_tree_;
   }
-  std::vector<MathUtils::Point2D> get_match_point() {
-    return solver_.get_l_condition_match_points();
-  }
+  //  std::vector<MathUtils::Point2D> get_match_point() {
+  //    return solver_.get_l_condition_match_points();
+  //  }
 
-  std::vector<double> get_ref_kappa() {
-    return solver_.get_l_condition_ref_curva();
-  }
-  std::vector<double> get_ref_omega() {
-    return solver_.get_l_condition_ref_omega();
-  }
+  //  std::vector<double> get_ref_kappa() {
+  //    return solver_.get_l_condition_ref_curva();
+  //  }
+
+  //  std::vector<double> get_ref_omega() {
+  //    return solver_.get_l_condition_ref_omega();
+  //  }
 
   void use_idm_model_get_va_ref(const double &init_speed,
                                 const double &init_acc,
                                 const double &desired_spd);
-  std::vector<double> get_ref_v() {
-    std::vector<double> res;
-    res.clear();
-    for (auto &l_condition : solver_.get_l_condition_data()) {
-      res.emplace_back(l_condition.v_ref);
-    }
-    return res;
-  };
-
-  std::vector<double> get_ref_a() {
-    std::vector<double> res;
-    res.clear();
-    for (auto &l_condition : solver_.get_l_condition_data()) {
-      res.emplace_back(l_condition.a_ref);
-    }
-    return res;
-  };
-  std::vector<std::vector<TreeILQR::LonDebugInfo>>& get_lon_debug_tree(){
+  //  std::vector<double> get_ref_v() {
+  //    std::vector<double> res;
+  //    res.clear();
+  //    for (auto &l_condition : solver_.get_l_condition_data()) {
+  //      res.emplace_back(l_condition.v_ref);
+  //    }
+  //    return res;
+  //  };
+  //
+  //  std::vector<double> get_ref_a() {
+  //    std::vector<double> res;
+  //    res.clear();
+  //    for (auto &l_condition : solver_.get_l_condition_data()) {
+  //      res.emplace_back(l_condition.a_ref);
+  //    }
+  //    return res;
+  //  };
+  std::vector<std::vector<ILQR::LonDebugInfo>> &get_lon_debug_tree() {
     return lon_debug_tree_;
   }
-  std::vector<std::vector<TreeILQR::LatDebugInfo>>& get_lat_debug_tree(){
+  std::vector<std::vector<ILQR::LatDebugInfo>> &get_lat_debug_tree() {
     return lat_debug_tree_;
   }
-
-  const std::vector<ILQR::StepCondition> &get_l_condition() const {
-    return solver_.get_l_condition_data();
+  std::vector<std::vector<ILQR::DodgeDebugInfo>> &get_dodge_debug_tree() {
+    return dodge_debug_tree_;
   }
+
+  //  const std::vector<ILQR::StepCondition> &get_l_condition() const {
+  //    return solver_.get_l_condition_data();
+  //  }
 
   std::vector<LatLongiMotionIterationStatistic> get_iter_stat_list() {
     return iter_stat_list_;
@@ -108,12 +121,9 @@ public:
     return init_traj_generator_.get_search_success();
   }
 
-  void execute();
-
   void execute_tree();
 
-private:
-  ILQR::ILQRSpace solver_;
+ private:
   ILQR::InitialTrajectoryGenerator init_traj_generator_;
   LateralLongitudinalMotionInput input_;
   std::vector<PlanningPoint> init_trajectory_;
@@ -122,10 +132,12 @@ private:
   std::vector<double> v_ref_;
   std::vector<double> a_ref_;
 
-  TreeILQR::TrajectoryTreeManager tree_solver_;
+  ILQR::TrajectoryTreeManager tree_solver_;
   std::vector<std::vector<PlanningPoint>> trajectory_tree_;
-  std::vector<std::vector<TreeILQR::LonDebugInfo>> lon_debug_tree_;
-  std::vector<std::vector<TreeILQR::LatDebugInfo>> lat_debug_tree_;
+  std::vector<std::vector<ILQR::LonDebugInfo>> lon_debug_tree_;
+  std::vector<std::vector<ILQR::LatDebugInfo>> lat_debug_tree_;
+  std::vector<std::vector<ILQR::DodgeDebugInfo>> dodge_debug_tree_;
+  bool enable_dodge_ = false;
 };
 
-#endif // ALGORITHM_ALGORITHM_CILQR_LATERAL_LONGITUDINAL_ILQR_H_
+#endif  // ALGORITHM_ALGORITHM_CILQR_LATERAL_LONGITUDINAL_ILQR_H_

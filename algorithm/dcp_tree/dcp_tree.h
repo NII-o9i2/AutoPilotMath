@@ -1,13 +1,13 @@
 #include "track_simulator.h"
 #include "utils.h"
 
-enum DCPAction{
+enum DCPAction {
   LC_Normal = 0,
   LC_Aggressive = 1,
   LK = 2,
 };
 
-class DCPTreeNode{
+class DCPTreeNode {
  public:
   DCPTreeNode() = default;
   ~DCPTreeNode() = default;
@@ -19,28 +19,25 @@ class DCPTreeNode{
   MathUtils::Point2D ego_position;
 };
 
-struct ObstacleTrajectory{
+struct ObstacleTrajectory {
   double relative_time = 0.0;
   MathUtils::Point2D position;
 };
 
-struct DCPTreeInput{
-  std::unordered_map<int,ObstacleTrajectory> obstacle_list;
+struct DCPTreeInput {
+  std::unordered_map<int, ObstacleTrajectory> obstacle_list;
   MathUtils::Point2D ego_position;
   DCPAction current_action = DCPAction::LK;
 };
 
-class DCPTree
-{
-public:
+class DCPTree {
+ public:
   DCPTree() = default;
   ~DCPTree() = default;
 
-
   void search();
   void add_ongoing_action();
-private:
+
+ private:
   int tree_height_ = 5;
-
 };
-

@@ -10,14 +10,14 @@
 #include "obstacle.h"
 
 namespace EnvSim {
-struct PointInfo{
+struct PointInfo {
   MathUtils::Point2D point;
   double theta = 0.0;
   double curvature = 0.0;
   bool is_on_left = true;
 };
 class EnvSimulator {
-public:
+ public:
   void update_case_data(const std::string &file_path);
 
   std::vector<std::vector<MathUtils::Point2D>> get_all_lanes_center_points() {
@@ -32,8 +32,8 @@ public:
     return res;
   }
 
-  const std::vector<std::vector<MathUtils::Point2D>> &
-  get_all_road_edge_points() {
+  const std::vector<std::vector<MathUtils::Point2D>>
+      &get_all_road_edge_points() {
     return freespace_manager_.get_all_road_edge_points();
   }
 
@@ -49,33 +49,30 @@ public:
     return freespace_manager_.get_vehicle_info();
   }
 
-  std::vector<MathUtils::Point2D>
-  get_freespace_right_points_by_ttc(double time,
-                                    const PlanningPoint &traj_point) {
+  std::vector<MathUtils::Point2D> get_freespace_right_points_by_ttc(
+      double time, const PlanningPoint &traj_point) {
     return freespace_manager_.get_freespace_right_points_by_ttc(time,
                                                                 traj_point);
   }
 
-  std::vector<MathUtils::Point2D>
-  get_freespace_left_points_by_ttc(double time,
-                                   const PlanningPoint &traj_point) {
+  std::vector<MathUtils::Point2D> get_freespace_left_points_by_ttc(
+      double time, const PlanningPoint &traj_point) {
     return freespace_manager_.get_freespace_left_points_by_ttc(time,
                                                                traj_point);
   }
 
-  std::vector<MathUtils::Point2D>
-  get_right_border_use_ellipse_model(const PlanningPoint &traj_point) {
+  std::vector<MathUtils::Point2D> get_right_border_use_ellipse_model(
+      const PlanningPoint &traj_point) {
     return freespace_manager_.get_right_border_use_ellipse_model(traj_point);
   }
 
-  std::vector<MathUtils::Point2D>
-  get_left_border_use_ellipse_model(const PlanningPoint &traj_point) {
+  std::vector<MathUtils::Point2D> get_left_border_use_ellipse_model(
+      const PlanningPoint &traj_point) {
     return freespace_manager_.get_left_border_use_ellipse_model(traj_point);
   }
 
-  MathUtils::Point2D
-  get_predict_ego_position_at_time(double time,
-                                   const PlanningPoint &traj_point) {
+  MathUtils::Point2D get_predict_ego_position_at_time(
+      double time, const PlanningPoint &traj_point) {
     return freespace_manager_.predict_ego_position_at_time(time, traj_point);
   }
 
@@ -92,10 +89,11 @@ public:
   double get_next_point_curva(const MathUtils::Point2D &pos);
 
   PointInfo get_nearest_point_info(const MathUtils::Point2D &pos);
-private:
+
+ private:
   LaneManager lane_manager_;
   ObstacleManager obstacle_manager_;
   FreeSpaceManager freespace_manager_;
 };
-} // namespace EnvSim
-#endif // ALGORITHM_ALGORITHM_ENV_SIMULATER_ENV_SIMULATER_H_
+}  // namespace EnvSim
+#endif  // ALGORITHM_ALGORITHM_ENV_SIMULATER_ENV_SIMULATER_H_

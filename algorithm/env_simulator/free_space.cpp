@@ -4,7 +4,8 @@ namespace EnvSim {
 
 MathUtils::Point2D find_projection_point(const MathUtils::Point2D &point1,
                                          const MathUtils::Point2D &point2,
-                                         double x, double y) {
+                                         double x,
+                                         double y) {
   MathUtils::Point2D projPoint;
 
   // Compute vector v
@@ -36,9 +37,8 @@ double calculate_distance(const MathUtils::Point2D &p1,
   return std::hypot(p2.x - p1.x, p2.y - p1.y);
 }
 
-std::vector<MathUtils::Point2D>
-equalDistanceInterpolation(const std::vector<MathUtils::Point2D> &points,
-                           double interval) {
+std::vector<MathUtils::Point2D> equalDistanceInterpolation(
+    const std::vector<MathUtils::Point2D> &points, double interval) {
   std::vector<MathUtils::Point2D> interpolatedPoints;
 
   for (size_t i = 0; i < points.size() - 1; ++i) {
@@ -71,13 +71,15 @@ equalDistanceInterpolation(const std::vector<MathUtils::Point2D> &points,
 }
 
 // 计算向量叉积
-double crossProduct(const MathUtils::Point2D &A, const MathUtils::Point2D &B,
+double crossProduct(const MathUtils::Point2D &A,
+                    const MathUtils::Point2D &B,
                     const MathUtils::Point2D &C) {
   return (B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x);
 }
 
 // 判断两个线段是否相交
-bool segmentsIntersect(const MathUtils::Point2D &A, const MathUtils::Point2D &B,
+bool segmentsIntersect(const MathUtils::Point2D &A,
+                       const MathUtils::Point2D &B,
                        const MathUtils::Point2D &C,
                        const MathUtils::Point2D &D) {
   double cross1 = crossProduct(A, B, C);
@@ -92,16 +94,20 @@ bool segmentsIntersect(const MathUtils::Point2D &A, const MathUtils::Point2D &B,
 }
 
 // 判断两个点是否在同一侧
-bool onSameSide(MathUtils::Point2D p1, MathUtils::Point2D p2,
-                MathUtils::Point2D a, MathUtils::Point2D b) {
+bool onSameSide(MathUtils::Point2D p1,
+                MathUtils::Point2D p2,
+                MathUtils::Point2D a,
+                MathUtils::Point2D b) {
   double cp1 = (b.x - a.x) * (p1.y - a.y) - (b.y - a.y) * (p1.x - a.x);
   double cp2 = (b.x - a.x) * (p2.y - a.y) - (b.y - a.y) * (p2.x - a.x);
   return (cp1 * cp2) >= 0;
 }
 
 // 判断两条线段是否相交
-bool areSegmentsIntersecting(MathUtils::Point2D p1, MathUtils::Point2D p2,
-                             MathUtils::Point2D q1, MathUtils::Point2D q2) {
+bool areSegmentsIntersecting(MathUtils::Point2D p1,
+                             MathUtils::Point2D p2,
+                             MathUtils::Point2D q1,
+                             MathUtils::Point2D q2) {
   bool isIntersecting = false;
 
   // 判断 p1 和 p2 在 q1 和 q2 的两侧
@@ -133,21 +139,21 @@ bool FreeSpaceManager::is_point_in_ellipse(
   ellipse_param_a = std::max(ellipse_param_a, vehicle_info_.length + 5.0);
   double ellipse_param_b = ellipse_param_a * 0.1;
   ellipse_param_b = std::max(ellipse_param_b, vehicle_info_.width + 5.0);
-  double condition = std::pow((road_edge_x * std::cos(theta) +
-                               road_edge_y * std::sin(theta) - h) /
-                                  ellipse_param_a,
-                              2) +
-                     std::pow((-road_edge_x * std::sin(theta) +
-                               road_edge_y * std::cos(theta) - k) /
-                                  ellipse_param_b,
-                              2);
+  double condition =
+      std::pow(
+          (road_edge_x * std::cos(theta) + road_edge_y * std::sin(theta) - h) /
+              ellipse_param_a,
+          2) +
+      std::pow(
+          (-road_edge_x * std::sin(theta) + road_edge_y * std::cos(theta) - k) /
+              ellipse_param_b,
+          2);
   return condition < 1;
 }
 
 void FreeSpaceManager::update(
     const std::vector<std::vector<MathUtils::Point2D>> &road_edge_vec_input,
     const VehicleInfo &vehicle_info) {
-
   vehicle_info_ = vehicle_info;
 
   if (road_edge_vec_input.size() < 2) {
@@ -377,4 +383,4 @@ bool FreeSpaceManager::is_point_in_freespace(const MathUtils::Point2D &point) {
   return inside;
 }
 
-} // namespace EnvSim
+}  // namespace EnvSim

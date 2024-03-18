@@ -1,0 +1,46 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../math_common/utils.h
+cmath
+-
+sstream
+-
+string
+-
+vector
+../math_common/vector
+
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/dcp_tree.cpp
+dcp_tree.h
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/dcp_tree.h
+
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/dcp_tree.h
+track_simulator.h
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/track_simulator.h
+utils.h
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/utils.h
+
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/dcp_tree_mgr.cpp
+
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/main_test.cpp
+iostream
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/iostream
+track_simulator.h
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/track_simulator.h
+
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/track_simulator.cpp
+
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/track_simulator.h
+vector
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/vector
+unordered_map
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/unordered_map
+utils.h
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/dcp_tree/utils.h
+

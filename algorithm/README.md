@@ -10,5 +10,6 @@ cmake .. && make
 ### 2. env test 
 open env_simulator/env_sim_test.ipynb via jupyter notebook
 
+
 ### 3. ilqr test 
-open cilqr/**XXX.ipynb** via jupyter notebook
+open cilqr/notebook/**XXX.ipynb** via jupyter notebook

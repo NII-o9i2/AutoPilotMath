@@ -80,4 +80,4 @@ void Obstacle::construct(const LaneManager &lane_manager) {
     }
   }
 }
-} // namespace EnvSim
+}  // namespace EnvSim

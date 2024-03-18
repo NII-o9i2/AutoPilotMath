@@ -1,0 +1,1 @@
+/usr/bin/c++  -std=c++14 -fPIC -g   CMakeFiles/test_env_simulator.dir/main.cpp.o  -o test_env_simulator  -Wl,-rpath,/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/build/math_common libenv_simulator.a ../math_common/libmath_common.so 

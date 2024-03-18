@@ -10,9 +10,9 @@ import matplotlib.cm as cm
 import math
 import os
 import sys
-sys.path.append('../../build/cilqr')
+sys.path.append('../../../build/cilqr')
 import pybind_ilqr
-sys.path.append(os.getcwd() + '/py_lib')
+sys.path.append(os.getcwd() + '/../py_lib')
 from cilqr_plot_xviz import *
 
 
@@ -854,7 +854,7 @@ def plot_traj_omega_dot(traj_new):
     for pt in traj_new:
         if 'omega_dot' not in pt:
             return
-        res_list.append(pt['omega_dot'])
+        res_list.append(pt['omega_dot'] * 57.29578049)
         
     fig_source = ColumnDataSource({
                     'x': list(range(len(res_list))), 
@@ -862,7 +862,7 @@ def plot_traj_omega_dot(traj_new):
                     })
 
     fig = figure(width=800, height=150, match_aspect=True, x_range=[-1, 31],
-                    y_axis_label="omega dot")
+                    y_axis_label="omega dot [deg]")
     scatter_res = fig.scatter('x', 'y', source=fig_source, line_width=2, size = 8 ,color = 'red', legend_label="omega dot")
     fig.line('x', 'y', source=fig_source)
     hover_tool_res_v = HoverTool(renderers=[scatter_res], tooltips=[("omega_dot", "@y"),

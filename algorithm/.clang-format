@@ -1,0 +1,11 @@
+BasedOnStyle: google
+IndentWidth: 2
+UseTab: Never
+#AccessModifierOffset: 3
+AllowAllParametersOfDeclarationOnNextLine: true
+BinPackParameters: false
+MaxEmptyLinesToKeep: 1
+SortIncludes: false
+AlignAfterOpenBracket: Align
+#AlignConsecutiveAssignments: true
+#AlignConsecutiveDeclarations: true

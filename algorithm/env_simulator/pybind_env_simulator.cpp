@@ -85,5 +85,5 @@ PYBIND11_MODULE(pybind_env_simulator, m) {
       .def_readwrite("omega", &EnvSim::PlanningPoint::omega)
       .def_readwrite("curva", &EnvSim::PlanningPoint::curva);
 
-  m.doc() = "pybind11 env simulator"; // optional module docstring
+  m.doc() = "pybind11 env simulator";  // optional module docstring
 }

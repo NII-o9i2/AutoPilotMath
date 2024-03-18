@@ -10,10 +10,11 @@
 #include <pybind11/chrono.h>
 #include "idm.h"
 
-// std::vector<double> poly_fit_eigen_python(const std::vector<math_utils::Point2D> &points);
+// std::vector<double> poly_fit_eigen_python(const
+// std::vector<math_utils::Point2D> &points);
 
 std::vector<IDM::IDMOutput> idm_python(
-      IDM::EgoInfo &ego_info,
-      std::vector<IDM::SpeedPlannerProfile> &speed_planner_profile,
-      IDM::IDMParam &idm_params,
-      std::vector<double> v_refs);
+    IDM::EgoInfo &ego_info,
+    std::vector<IDM::SpeedPlannerProfile> &speed_planner_profile,
+    IDM::IDMParam &idm_params,
+    std::vector<double> v_refs);

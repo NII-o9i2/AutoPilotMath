@@ -5,7 +5,6 @@
 #include <map>
 #include <memory>
 
-
 #include "spline.h"
 #include "utils.h"
 
@@ -20,8 +19,8 @@ struct PlanningPoint {
   double theta = 0.0;
   double velocity = 0.0;
   double acceleration = 0.0;
-  double omega = 0.0; // d(theta) / dt
-  double curva = 0.0; // omega / velocity = curva
+  double omega = 0.0;  // d(theta) / dt
+  double curva = 0.0;  // omega / velocity = curva
   double jerk = 0.0;
   double omega_dot = 0.0;
 };
@@ -44,7 +43,7 @@ struct EllipseParam {
 };
 
 class FreeSpaceManager {
-public:
+ public:
   FreeSpaceManager() { output_ = std::make_shared<FreeSpaceMangerOutput>(); }
 
   ~FreeSpaceManager() = default;
@@ -69,21 +68,21 @@ public:
   std::map<Direction, std::vector<MathUtils::Point2D>>
   find_closest_point_at_both_side(const MathUtils::Point2D &point);
 
-  MathUtils::Point2D
-  predict_ego_position_at_time(double time, const PlanningPoint &traj_point);
+  MathUtils::Point2D predict_ego_position_at_time(
+      double time, const PlanningPoint &traj_point);
 
-  std::vector<MathUtils::Point2D>
-  get_right_border_use_ellipse_model(const PlanningPoint &traj_point);
+  std::vector<MathUtils::Point2D> get_right_border_use_ellipse_model(
+      const PlanningPoint &traj_point);
 
-  std::vector<MathUtils::Point2D>
-  get_left_border_use_ellipse_model(const PlanningPoint &traj_point);
+  std::vector<MathUtils::Point2D> get_left_border_use_ellipse_model(
+      const PlanningPoint &traj_point);
 
   bool is_point_in_ellipse(const MathUtils::Point2D &road_edge_point,
                            const PlanningPoint &traj_point);
 
   // accessor
-  const std::vector<std::vector<MathUtils::Point2D>> &
-  get_all_road_edge_points() {
+  const std::vector<std::vector<MathUtils::Point2D>>
+      &get_all_road_edge_points() {
     return road_edge_processed_vec_;
   }
 
@@ -91,19 +90,17 @@ public:
     return freespace_points_by_roi_;
   }
 
-  std::vector<MathUtils::Point2D>
-  get_freespace_left_points_by_ttc(double time,
-                                   const PlanningPoint &traj_point);
+  std::vector<MathUtils::Point2D> get_freespace_left_points_by_ttc(
+      double time, const PlanningPoint &traj_point);
 
-  std::vector<MathUtils::Point2D>
-  get_freespace_right_points_by_ttc(double time,
-                                    const PlanningPoint &traj_point);
+  std::vector<MathUtils::Point2D> get_freespace_right_points_by_ttc(
+      double time, const PlanningPoint &traj_point);
 
   const EllipseParam &get_ellipse_param() { return ellipse_param_; }
 
   const VehicleInfo &get_vehicle_info() { return vehicle_info_; }
 
-private:
+ private:
   // intermediate results
 
   // index 0:left road edge; index 1:right road edge
@@ -125,4 +122,4 @@ private:
   std::shared_ptr<FreeSpaceMangerOutput> output_;
 };
 
-} // namespace EnvSim
+}  // namespace EnvSim

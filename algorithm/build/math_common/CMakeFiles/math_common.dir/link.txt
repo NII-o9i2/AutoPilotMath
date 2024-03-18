@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -std=c++14  -shared -Wl,-soname,libmath_common.so -o libmath_common.so CMakeFiles/math_common.dir/utils.cpp.o 

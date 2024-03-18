@@ -21,7 +21,7 @@ struct TrajectoryPoint {
 };
 
 class RawTrajectoryPoint {
-public:
+ public:
   RawTrajectoryPoint(int _id, double _s, double _l)
       : lane_id(_id), s(_s), l(_l){};
   int lane_id;
@@ -30,12 +30,20 @@ public:
 };
 
 class Obstacle {
-public:
-  Obstacle(int _id, double _length, double _width, double _init_theta,
-           const std::vector<double> &_raw_t, const std::vector<double> &_raw_v,
+ public:
+  Obstacle(int _id,
+           double _length,
+           double _width,
+           double _init_theta,
+           const std::vector<double> &_raw_t,
+           const std::vector<double> &_raw_v,
            const std::vector<RawTrajectoryPoint> &_raw_trajectory)
-      : id(_id), length_(_length), width_(_width), init_theta_(_init_theta),
-        raw_t_(_raw_t), raw_v_(_raw_v),
+      : id(_id),
+        length_(_length),
+        width_(_width),
+        init_theta_(_init_theta),
+        raw_t_(_raw_t),
+        raw_v_(_raw_v),
         raw_trajectory_points_(_raw_trajectory) {
     for (auto &v : raw_v_) {
       v = v / 3.6;
@@ -48,7 +56,7 @@ public:
   double get_width() const { return width_; };
   int get_id() const { return id; };
 
-private:
+ private:
   int id;
   double length_;
   double width_;
@@ -61,9 +69,9 @@ private:
 };
 
 class ObstacleManager {
-public:
+ public:
   std::unordered_map<int, Obstacle> obstacle_map;
 };
-} // namespace EnvSim
+}  // namespace EnvSim
 
-#endif // ALGORITHM_ALGORITHM_ENV_SIMULATOR_OBSTACLE_H_
+#endif  // ALGORITHM_ALGORITHM_ENV_SIMULATOR_OBSTACLE_H_

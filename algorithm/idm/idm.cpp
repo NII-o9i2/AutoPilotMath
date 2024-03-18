@@ -67,7 +67,8 @@ double calc_idm_acc(IDMParam &idm_params,
         idm_params.min_spacing + std::max(0.0, headway_s_item + dealta_v_item);
     // double min_spacing_item = headway_s_item + dealta_v_item;
     // if (min_spacing_item > 0.0) {
-    //   double min_spacing_add_headway = idm_params.min_spacing + headway_s_item;
+    //   double min_spacing_add_headway = idm_params.min_spacing +
+    //   headway_s_item;
 
     //   double delta_s_desire_add_headway = min_spacing_add_headway - delta_s;
     //   delta_s_desire_add_headway = std::min(delta_s_desire_add_headway, 0.5);
@@ -264,8 +265,8 @@ std::vector<IDMOutput> get_idm_output(
       output.v_ref_out = raw_v_ref_follow.at(i);
       output.a_ref_out = raw_a_ref_follow.at(i);
       idm_output.push_back(output);
-        std::cout << "infex :" << i
-            << ",after acc is:" << raw_a_ref_follow.at(i) << std::endl;
+      std::cout << "infex :" << i << ",after acc is:" << raw_a_ref_follow.at(i)
+                << std::endl;
     }
   }
   return idm_output;

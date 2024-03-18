@@ -49,16 +49,14 @@ int main() {
   std::vector<double> refs;
   // tmp_test.resize(31);
 
-  for (size_t i = 0; i < 31; i++)
-  {
-    IDM::SpeedPlannerProfile item(40,1,30,0);
+  for (size_t i = 0; i < 31; i++) {
+    IDM::SpeedPlannerProfile item(40, 1, 30, 0);
     // item.leadercarlength = 4;
     // item.exist_leader = 1;
     // item.s_leader = 30;
     // item.v_leader = 0;
     tmp_test.push_back(item);
   }
-  
 
   // tmp_test.at(0).s_leader = 21.6249;
   // tmp_test.at(1).s_leader = 24.6555;
@@ -208,8 +206,7 @@ int main() {
   std::vector<IDM::IDMOutput> idm_output_test;
   // IDM::IDMPLANNER idm_planner;
 
-  idm_output_test =
-      IDM::get_idm_output(ego_info, tmp_test, idm_params, refs);
+  idm_output_test = IDM::get_idm_output(ego_info, tmp_test, idm_params, refs);
 
   for (size_t i = 0; i < idm_output_test.size(); i++) {
     std::cout << "idm_output_s:" << idm_output_test.at(i).s_ref_out

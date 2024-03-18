@@ -27,7 +27,7 @@ class XvizPlotWM(XvizPlotBase):
         self.build_lane_data_frame()
 
         # 主图, 包含 obs_polygon, obs_traj, ego_polygon, lane
-        main_figure_viz = FigureViz('Main_Figure', 'X', 'Y', width=1200, height =1200)
+        main_figure_viz = FigureViz('Main_Figure', 'X', 'Y', width=1000, height =900)
         self.add_layer_to_figure(main_figure_viz, args=dict(data_key='obstacle_polygon', \
                                                                 plot_type='multi_polygon', color='blue',  \
                                                                 label='obstacle_polygon', fill_alpha=0, \
@@ -48,6 +48,10 @@ class XvizPlotWM(XvizPlotBase):
                                                                 plot_type='scatter', color='red',  \
                                                                 label='ego_raw_lane_center_point', \
                                                                 line_alpha=0.6, line_width=6))
+        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='last_ego_raw_lane_center_point', \
+                                                                plot_type='line_scatter', color='limegreen',  \
+                                                                label='last_ego_raw_lane_center_point', \
+                                                                line_alpha=0.4, line_width=4))    
         self.add_layer_to_figure(main_figure_viz, args=dict(data_key='ego_lane_left_bound_point', \
                                                                 plot_type='line_scatter', color='Green',  \
                                                                 label='ego_lane_left_bound', \
@@ -78,7 +82,7 @@ class XvizPlotWM(XvizPlotBase):
 
         # nop count相关
         nop_count_figure_viz = FigureViz('Nop_Counter', 'Index', 'Data', y_range=None, 
-                                         width=600 ,height = 600)
+                                         width=400 ,height = 400)
         self.add_layer_to_figure(nop_count_figure_viz, args=dict(data_key='nop_counter', \
                                                                 plot_type='single_point'))
         self.figs_['nop_count'] = nop_count_figure_viz.plot()
@@ -86,7 +90,7 @@ class XvizPlotWM(XvizPlotBase):
 
         # lane center dist to bound相关
         lane_center_dist_to_boundary_viz = FigureViz('Nop_Counter', 'Dist', 'Index', \
-                                                    width=600 ,height = 300)
+                                                    width=400 ,height = 400)
         self.add_layer_to_figure(lane_center_dist_to_boundary_viz, args=dict(data_key='ego_lane_center_dist_to_left', \
                                                                 plot_type='line_scatter', color='Green',  \
                                                                 label='ego_lane_center_dist_to_left', \
@@ -97,9 +101,31 @@ class XvizPlotWM(XvizPlotBase):
                                                                 line_alpha=0.2, line_width=4))
         self.figs_['lane_center_dist_to_boundary'] = lane_center_dist_to_boundary_viz.plot()
         callback_lane_center_dist_to_boundary = lane_center_dist_to_boundary_viz.get_callback_list()
+        
+        # ego to diff refline min dis相关
+        car_dis_figure_viz = FigureViz('Car_To_RefLine_Min_Dis', 'Index', 'Data', y_range=[-2, 8], 
+                                         width=800 ,height = 500)
+        self.add_layer_to_figure(car_dis_figure_viz, args=dict(data_key='car_to_ego_lane_refline_min_dis', \
+                                                                plot_type='single_point', \
+                                                                color='Green',  \
+                                                                label='car_to_ego_lane_min_dis', \
+                                                                line_alpha=0.5, line_width=4))
+        self.add_layer_to_figure(car_dis_figure_viz, args=dict(data_key='car_to_left_lane_refline_min_dis', \
+                                                                plot_type='single_point', \
+                                                                color='red',  \
+                                                                label='car_to_left_lane_min_dis', \
+                                                                line_alpha=0.5, line_width=4))
+        self.add_layer_to_figure(car_dis_figure_viz, args=dict(data_key='car_to_right_lane_refline_min_dis', \
+                                                                plot_type='single_point', \
+                                                                color='yellow',  \
+                                                                label='car_to_right_lane_min_dis', \
+                                                                line_alpha=0.5, line_width=4))
+        self.figs_['car_min_dis_to_refline'] = car_dis_figure_viz.plot()
+        callback_car_min_dis = car_dis_figure_viz.get_callback_list()
 
         # 汇合所有的callback
-        all_callback = [*callback_main_fig, *callback_nop_count, *callback_lane_center_dist_to_boundary]
+        all_callback = [*callback_main_fig, *callback_nop_count, 
+                        *callback_lane_center_dist_to_boundary, *callback_car_min_dis]
 
         # 创建滑块        
         self.add_slider()
@@ -235,6 +261,9 @@ class XvizPlotWM(XvizPlotBase):
         self.build_right_lane_center_point_data_frame()
         self.build_ego_lane_center_dist_to_left_data_frame()
         self.build_ego_lane_center_dist_to_right_data_frame()
+        self.build_car_to_ego_lane_refline_min_dis_data_frame()
+        self.build_car_to_left_lane_refline_min_dis_data_frame()
+        self.build_car_to_right_lane_refline_min_dis_data_frame()
     
     def build_ego_lane_center_point_data_frame(self):
         data_frame = self.get_data_frame_at_datakey('lane_debug')
@@ -282,8 +311,24 @@ class XvizPlotWM(XvizPlotBase):
                     }
             one_frame_new['data'] = one_data_new
             data_frame_new.append(one_frame_new)
+        self.generate_last_ego_raw_lane_center_point(data_frame_new)
         self.set_data_frame_at_datakey('point_channel', 'ego_raw_lane_center_point', data_frame_new)
-
+        
+    def generate_last_ego_raw_lane_center_point(self, data_frame_new):
+        last_ego_raw_lane_center_point = [{'data': data_frame_new[0]['data'], 
+                                        'index': data_frame_new[0]['index'], 
+                                        't': data_frame_new[0]['t']}]
+        for i in range(1, len(data_frame_new)):
+            frame = {
+                'data': data_frame_new[i - 1]['data'],
+                'index': data_frame_new[i]['index'],
+                't': data_frame_new[i]['t']
+            }
+            last_ego_raw_lane_center_point.append(frame)
+        # print(last_ego_raw_lane_center_point)
+        self.set_data_frame_at_datakey('point_channel', 
+                                       'last_ego_raw_lane_center_point', last_ego_raw_lane_center_point)   
+    
     def build_ego_lane_left_bound_point_data_frame(self):
         data_frame = self.get_data_frame_at_datakey('lane_debug')
         data_frame_new = []
@@ -430,12 +475,69 @@ class XvizPlotWM(XvizPlotBase):
             data_frame_new.append(one_frame_new)
         self.set_data_frame_at_datakey('point_channel', 'ego_lane_center_dist_to_right', data_frame_new)
 
+    def build_car_to_ego_lane_refline_min_dis_data_frame(self):
+        data_frame = self.get_data_frame_at_datakey('lane_debug')
+        data_frame_new = []
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            one_data = one_frame['data']
+            ego_to_lane_min_dis_list = []
+            for lane_debug in one_data:
+                if lane_debug['id'] == 0:
+                    ego_to_lane_min_dis_list.append(lane_debug['ego_to_lane_min_dis'])
+                    # pprint(ego_to_lane_min_dis_list)
+            one_frame_new['data'] = ego_to_lane_min_dis_list
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey('point_channel', 'car_to_ego_lane_refline_min_dis', data_frame_new)
+        
+    def build_car_to_left_lane_refline_min_dis_data_frame(self):
+        data_frame = self.get_data_frame_at_datakey('lane_debug')
+        data_frame_new = []
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            one_data = one_frame['data']
+            ego_to_lane_min_dis_list = []
+            for lane_debug in one_data:
+                if lane_debug['id'] == -1:
+                    ego_to_lane_min_dis_list.append(lane_debug['ego_to_lane_min_dis'])
+                    # pprint(ego_to_lane_min_dis_list)
+            one_frame_new['data'] = ego_to_lane_min_dis_list
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey('point_channel', 'car_to_left_lane_refline_min_dis', data_frame_new) 
+        
+    def build_car_to_right_lane_refline_min_dis_data_frame(self):
+        data_frame = self.get_data_frame_at_datakey('lane_debug')
+        data_frame_new = []
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            one_data = one_frame['data']
+            ego_to_lane_min_dis_list = []
+            for lane_debug in one_data:
+                if lane_debug['id'] == 1:
+                    ego_to_lane_min_dis_list.append(lane_debug['ego_to_lane_min_dis'])
+                    # pprint(ego_to_lane_min_dis_list)
+            one_frame_new['data'] = ego_to_lane_min_dis_list
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey('point_channel', 'car_to_right_lane_refline_min_dis', data_frame_new)      
+            
     def show2html(self):
         output_file(self.output_)
-        show(column(self.time_slider_,
-                    row(self.figs_['main_fig'], 
-                        column(self.figs_['nop_count'], 
-                            self.figs_['lane_center_dist_to_boundary']))))
+        
+        row1 = row(self.figs_['nop_count'], self.figs_['lane_center_dist_to_boundary'])
+        col1 = column(self.figs_['car_min_dis_to_refline'], row1)
+        row2 = row(self.figs_['main_fig'], col1)
+        col2 = column(self.time_slider_, row2)
+        
+        show(col2)
         return
 
 if __name__ == '__main__':

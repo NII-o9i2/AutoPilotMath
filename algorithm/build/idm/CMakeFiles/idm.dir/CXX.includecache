@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/idm/idm.cpp
+idm.h
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/idm/idm.h
+cmath
+-
+iostream
+-
+vector
+-
+
+/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/idm/idm.h
+algorithm
+-
+vector
+-
+cmath
+-
+iostream
+-
+

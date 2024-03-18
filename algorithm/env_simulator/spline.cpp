@@ -12,7 +12,6 @@ using namespace std;
 void interpolate_points(const std::vector<MathUtils::Point2D> &input_points,
                         std::vector<MathUtils::Point2D> &output_points,
                         const int &output_points_num) {
-
   size_t n = input_points.size();
 
   // 构建矩阵A和向量B
@@ -33,20 +32,31 @@ void interpolate_points(const std::vector<MathUtils::Point2D> &input_points,
 
   // 输出插值结果
 
-  double step = std::max((input_points.back().x - input_points.front().x) /
-                             static_cast<double>(output_points_num),
-                         0.1);
-  output_points.clear();
-  for (double xi = input_points[0].x; xi <= input_points[n - 1].x; xi += step) {
-    double yi = coefficients[0] + coefficients[1] * xi +
-                coefficients[2] * xi * xi + coefficients[3] * xi * xi * xi;
-    //    std::cout << "(" << xi << ", " << yi << ")" << std::endl;
-    output_points.emplace_back(xi, yi);
+  double step = (input_points.back().x - input_points.front().x) /
+                static_cast<double>(output_points_num);
+  if (step > 0.0) {
+    step = std::max(step, 0.1);
+    output_points.clear();
+    for (double xi = input_points[0].x; xi <= input_points[n - 1].x;
+         xi += step) {
+      double yi = coefficients[0] + coefficients[1] * xi +
+                  coefficients[2] * xi * xi + coefficients[3] * xi * xi * xi;
+      output_points.emplace_back(xi, yi);
+    }
+  } else {
+    step = std::min(step, -0.1);
+    output_points.clear();
+    for (double xi = input_points[0].x; xi >= input_points[n - 1].x;
+         xi += step) {
+      double yi = coefficients[0] + coefficients[1] * xi +
+                  coefficients[2] * xi * xi + coefficients[3] * xi * xi * xi;
+      output_points.emplace_back(xi, yi);
+    }
   }
 }
 
-MathUtils::Point2D
-get_point_via_s(const std::vector<MathUtils::Point2D> &ref_points, double s) {
+MathUtils::Point2D get_point_via_s(
+    const std::vector<MathUtils::Point2D> &ref_points, double s) {
   double s_sum = 0.0;
   MathUtils::Point2D res;
   if (ref_points.size() == 1 && s < 1e-3) {

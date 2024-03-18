@@ -85,8 +85,8 @@ void LaneManager::update_lanes(const std::vector<Lane> &lanes) {
 }
 
 // Note: not precise
-const MathUtils::Point2D
-Lane::frenet_to_cartesian(const MathUtils::Point2D &frenet_point) const {
+const MathUtils::Point2D Lane::frenet_to_cartesian(
+    const MathUtils::Point2D &frenet_point) const {
   double s_sum = 0;
   int index_target;
   MathUtils::Point2D res_point;
@@ -129,4 +129,4 @@ LaneManager::get_all_lanes_center_points() {
   }
   return lanes_pts;
 }
-} // namespace EnvSim
+}  // namespace EnvSim
