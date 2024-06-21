@@ -26,6 +26,27 @@ struct InterfacePointInfo {
   double theta = 0.0;
   double curvature = 0.0;
   bool is_on_left = true;
+  double speed_limit = 16.67;
+};
+
+struct InterfaceVehicleInfo{
+  InterfaceVehicleInfo() = default;
+  MathUtils::Point2D point;
+  double theta = 0.0;
+  double default_omega = 0.0;
+};
+
+struct InterfacePursuitPointInfo{
+  InterfacePursuitPointInfo() = default;
+  MathUtils::Point2D point;
+  double omega = 0.0;
+  double speed_limit = 0.0;
+};
+
+enum ObstacleType{
+  Real = 0,
+  StopLine = 1,
+  RoadEdge = 2
 };
 
 struct ILQRObstacleTrajectoryPoint {
@@ -39,6 +60,7 @@ struct ILQRObstacleTrajectoryPoint {
   double width = 0.0;
   MathUtils::Point2D v;
   MathUtils::Point2D a;
+  ObstacleType type = Real;
 };
 
 class ILQRObstacleInterface {
@@ -65,6 +87,7 @@ class ILQREnvInterface {
   virtual FuncReturn<InterfacePointInfo> get_nearest_point_info(
       const MathUtils::Point2D& pos) = 0;
   virtual FuncReturn<double> get_lane_s(const MathUtils::Point2D& pos) = 0;
+  virtual FuncReturn<InterfacePursuitPointInfo> get_pursuit_point_info(const InterfaceVehicleInfo& vehicle_info) = 0;
   std::shared_ptr<ILQRObstacleMgrInterface> obstacle_mgr_interface_ = nullptr;
 };
 }

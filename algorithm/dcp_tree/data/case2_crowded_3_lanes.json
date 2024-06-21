@@ -1,0 +1,82 @@
+{
+  "name": "case2_crowded_3_lanes",
+  "real_action": "010",
+  "change_direction": 1,
+  "lanes_objs": [
+    {
+      "lane_id": -1,
+      "cars": [
+          {
+          "car_s": -15.0,
+          "car_v": 15.0,
+          "car_a": 0.0,
+          "car_length": 5.0
+          },
+          {
+          "car_s": -5.0,
+          "car_v": 15.0,
+          "car_a": 0.0,
+          "car_length": 5.0
+          },
+                    {
+          "car_s": 5.0,
+          "car_v": 15.0,
+          "car_a": 0.0,
+          "car_length": 5.0
+          },
+          {
+          "car_s": 15.0,
+          "car_v": 15.0,
+          "car_a": 0.0,
+          "car_length": 5.0
+          }
+      ]
+    },
+    {
+      "lane_id": 0,
+      "cars": [
+          {
+          "car_s": -15.0,
+          "car_v": 15.0,
+          "car_a": 0.0,
+          "car_length": 5.0
+          },
+          {
+          "car_s": 15.0,
+          "car_v": 15.0,
+          "car_a": 0.0,
+          "car_length": 5.0
+          }
+      ]
+    },
+    {
+      "lane_id": 1,
+      "cars": [
+          {
+          "car_s": -15.0,
+          "car_v": 15.0,
+          "car_a": 0.0,
+          "car_length": 5.0
+          },
+          {
+          "car_s": -5.0,
+          "car_v": 15.0,
+          "car_a": 0.0,
+          "car_length": 5.0
+          },
+                    {
+          "car_s": 5.0,
+          "car_v": 15.0,
+          "car_a": 0.0,
+          "car_length": 5.0
+          },
+          {
+          "car_s": 15.0,
+          "car_v": 15.0,
+          "car_a": 0.0,
+          "car_length": 5.0
+          }
+      ]
+    }
+  ]
+}

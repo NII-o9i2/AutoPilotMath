@@ -5,7 +5,6 @@
 #include "iostream"
 #include "polyfit/polyfit.h"
 #include "polyfit_osqp.h"
-#include "lateral_longitudinal_ilqr.h"
 #include <benchmark/benchmark.h>
 // #include "njson/njson_test.h"
 
@@ -221,25 +220,25 @@ static void BM_Poly_fit_eigen(benchmark::State &state) {
 }
 
 static void BM_CILQR(benchmark::State &state) {
-  ILQR::VehicleModelBicycle vehicle_model_bicycle;
-  ILQR::ILQRParam param;
-  param.delta_t = 0.2;
-
-  vehicle_model_bicycle.update_parameter(param);
-
-  LateralLongitudinalMotion motion;
-  PlanningPoint point_init;
-  point_init.position.x = 10.0;
-  point_init.position.y = 4.0;
-  point_init.theta = 0.2;
-  point_init.velocity = 25.0;
-  point_init.acceleration  = 0.1;
-
-  motion.init("/home/SENSETIME/fengxiaotong/ws/xviz/common_math/algorithm/env_simulator/data/straight_lanes_case_1.json",point_init);
-  for (auto _ : state) {
-    motion.init("/home/SENSETIME/fengxiaotong/ws/xviz/common_math/algorithm/env_simulator/data/straight_lanes_case_1.json",point_init);
-    motion.execute();
-  }
+//  ILQR::VehicleModelBicycle vehicle_model_bicycle;
+//  ILQR::ILQRParam param;
+//  param.delta_t = 0.2;
+//
+//  vehicle_model_bicycle.update_parameter(param);
+//
+//  LateralLongitudinalMotion motion;
+//  PlanningPoint point_init;
+//  point_init.position.x = 10.0;
+//  point_init.position.y = 4.0;
+//  point_init.theta = 0.2;
+//  point_init.velocity = 25.0;
+//  point_init.acceleration  = 0.1;
+//
+//  motion.init("/home/SENSETIME/fengxiaotong/ws/xviz/common_math/algorithm/env_simulator/data/straight_lanes_case_1.json",point_init);
+//  for (auto _ : state) {
+//    motion.init("/home/SENSETIME/fengxiaotong/ws/xviz/common_math/algorithm/env_simulator/data/straight_lanes_case_1.json",point_init);
+//    motion.execute();
+//  }
 
 }
 // Register the function as a benchmark

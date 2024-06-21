@@ -1,0 +1,34 @@
+{
+  "name": "case6_cur_left_lane_2_cars",
+  "real_action": "001",
+  "change_direction": 0,
+  "lanes_objs": [
+    {
+      "lane_id": -1,
+      "cars": [
+          {
+          "car_s": 10.0,
+          "car_v": 15.0,
+          "car_a": 0.0,
+          "car_length": 5.0
+          }
+      ]
+    },
+    {
+      "lane_id": 0,
+      "cars": [
+          {
+          "car_s": 10.0,
+          "car_v": 15.0,
+          "car_a": 0.0,
+          "car_length": 5.0
+          }
+      ]
+    },
+    {
+      "lane_id": 1,
+      "cars": [
+      ]
+    }
+  ]
+}

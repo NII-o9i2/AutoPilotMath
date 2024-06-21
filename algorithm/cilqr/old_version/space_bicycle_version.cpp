@@ -899,7 +899,7 @@ void VehicleModelBicycle::step_kappa(const Eigen::VectorXd &state,
   double next_theta = state[3] + action[1] * l;
   double next_x = state[0];
   double next_y = state[1];
-  if (action[1] * l < param_.kappa_thr) {
+  if (std::fabs(action[1] * l) < param_.kappa_thr) {
     next_x += std::cos(state[3]) * l;
     next_y += std::sin(state[3]) * l;
   } else {

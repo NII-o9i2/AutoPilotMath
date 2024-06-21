@@ -1,6 +1,6 @@
 from bokeh.plotting import figure, show, ColumnDataSource
 from bokeh.layouts import column, row
-from bokeh.io import output_notebook
+from bokeh.io import output_notebook,output_file
 from bokeh.palettes import Magma, Viridis, Category20
 from bokeh.models import Arrow, VeeHead
 from bokeh.models import WheelZoomTool
@@ -9,6 +9,7 @@ import matplotlib
 import matplotlib.cm as cm
 import math
 import os
+from bokeh.layouts import gridplot, column
 import sys
 sys.path.append('../../../build/cilqr')
 import pybind_ilqr
@@ -581,8 +582,8 @@ def plot_cilqr_constraint(lane,objs,planning_origin,traj,traj_new,use_exp_list):
     plot_traj_acc(traj_new)
     show(p)
 
-def plot_tree_cilqr_constraint(lane,objs,planning_origin,traj,traj_trees,use_exp_list):
-    p = figure(width=900, height=400, match_aspect=True)
+def plot_tree_cilqr_constraint(lane,objs,planning_origin,traj,traj_trees,use_exp_list,gen_page):
+    p = figure(width=500, height=500, match_aspect=True)
     lane_list = []
     a = 0
     step_vh = 2.0
@@ -709,19 +710,32 @@ def plot_tree_cilqr_constraint(lane,objs,planning_origin,traj,traj_trees,use_exp
     
     p.toolbar.active_scroll = p.select_one(WheelZoomTool)
     p.legend.click_policy = 'hide'
-    output_notebook()
 
 
-    plot_traj_acc_lat(traj_new)
-    plot_traj_omega(traj_new)
-    plot_traj_theta(traj_new)
-    # plot_traj_curva(traj_new)
-    plot_traj_lat_dis(traj_new)
-    plot_traj_omega_dot(traj_new)
-    plot_traj_v(traj_new)
-    plot_traj_acc(traj_new)
-    plot_traj_jerk(traj_new)
-    show(p)
+    plot_acc_lat = plot_traj_acc_lat(traj_new)
+    plot_omega = plot_traj_omega(traj_new)
+    plot_theta = plot_traj_theta(traj_new)
+    # # plot_traj_curva(traj_new)
+    plot_lat_dis = plot_traj_lat_dis(traj_new)
+    plot_omega_dot = plot_traj_omega_dot(traj_new)
+    plot_v = plot_traj_v(traj_new)
+    plot_acc = plot_traj_acc(traj_new)
+    plot_jerk = plot_traj_jerk(traj_new)
+    if gen_page:
+        output_file("xviz.html")
+    else:
+        output_notebook()
+    plots_to_include = [plot_acc_lat, plot_omega, plot_theta, plot_lat_dis, plot_omega_dot, plot_v, plot_acc, plot_jerk]
+    plots_to_include = [plot for plot in plots_to_include if plot is not None]
+
+    # 如果 plots_to_include 不为空，则创建 right_column
+    if plots_to_include:
+        right_column = column(*plots_to_include, sizing_mode="stretch_width")
+    else:
+        right_column = None
+    # right_column = column(plot_acc_lat, plot_omega, plot_theta,plot_lat_dis, plot_omega_dot,plot_v,plot_acc,plot_jerk,sizing_mode="stretch_width")
+    grid = gridplot([[p,right_column]])
+    show(grid)
 
 def plot_traj_v(traj_new):
     res_list = []
@@ -744,19 +758,20 @@ def plot_traj_v(traj_new):
                 'y': ref_list
                 })
 
-    fig = figure(width=800, height=150, match_aspect=True, x_range=[-1, 31])
-    fig.scatter('x', 'y', source=fig_source, line_width=2, size = 8 ,color = 'red', legend_label="res_vel")
+    fig = figure(width=500, height=100, match_aspect=True, x_range=[-1, 31])
+    fig.scatter('x', 'y', source=fig_source, line_width=2, size = 4 ,color = 'red', legend_label="res_vel")
     fig.line('x', 'y', source=fig_source)
     
-    fig.scatter('x', 'y', source=ref_source, line_width=2, size = 8 ,color = 'blue', legend_label="ref_vel")
+    fig.scatter('x', 'y', source=ref_source, line_width=2, size = 4 ,color = 'blue', legend_label="ref_vel")
     fig.line('x', 'y', source=ref_source)
     
     hover_tool_res_v = HoverTool( tooltips=[("v", "@y"), ("index", "@x"),], mode='mouse')
     fig.add_tools(hover_tool_res_v)
     fig.toolbar.active_scroll = fig.select_one(WheelZoomTool)
     fig.legend.click_policy = 'hide'
-    output_notebook()
-    show(fig)
+    return fig
+    # output_notebook()
+    # show(fig)
 
 def plot_traj_acc(traj_new):
     res_list = []
@@ -779,11 +794,11 @@ def plot_traj_acc(traj_new):
                 'y': ref_list
                 })
 
-    fig = figure(width=800, height=150, match_aspect=True, x_range=[-1, 31])
-    fig.scatter('x', 'y', source=fig_source, line_width=2, size = 8 ,color = 'red', legend_label="res_acc")
+    fig = figure(width=500, height=100, match_aspect=True, x_range=[-1, 31])
+    fig.scatter('x', 'y', source=fig_source, line_width=2, size = 4 ,color = 'red', legend_label="res_acc")
     fig.line('x', 'y', source=fig_source)
     
-    fig.scatter('x', 'y', source=ref_source, line_width=2, size = 8 ,color = 'blue', legend_label="ref_acc")
+    fig.scatter('x', 'y', source=ref_source, line_width=2, size = 4 ,color = 'blue', legend_label="ref_acc")
     fig.line('x', 'y', source=ref_source)
     
     hover_tool_res_v = HoverTool( tooltips=[("acc", "@y"),
@@ -792,8 +807,9 @@ def plot_traj_acc(traj_new):
     fig.add_tools(hover_tool_res_v)
     fig.toolbar.active_scroll = fig.select_one(WheelZoomTool)
     fig.legend.click_policy = 'hide'
-    output_notebook()
-    show(fig)
+    return fig
+    # output_notebook()
+    # show(fig)
 
 def plot_traj_jerk(traj_new):
     res_list = []
@@ -810,8 +826,8 @@ def plot_traj_jerk(traj_new):
                     })
 
 
-    fig = figure(width=800, height=150, match_aspect=True, x_range=[-1, 31])
-    fig.scatter('x', 'y', source=fig_source, line_width=2, size = 8 ,color = 'red', legend_label="jerk")
+    fig = figure(width=500, height=100, match_aspect=True, x_range=[-1, 31])
+    fig.scatter('x', 'y', source=fig_source, line_width=2, size = 4 ,color = 'red', legend_label="jerk")
     fig.line('x', 'y', source=fig_source)
 
     
@@ -821,8 +837,9 @@ def plot_traj_jerk(traj_new):
     fig.add_tools(hover_tool_res_v)
     fig.toolbar.active_scroll = fig.select_one(WheelZoomTool)
     fig.legend.click_policy = 'hide'
-    output_notebook()
-    show(fig)
+    return fig
+    # output_notebook()
+    # show(fig)
 
 def plot_traj_lat_dis(traj_new):
     res_list = []
@@ -836,9 +853,9 @@ def plot_traj_lat_dis(traj_new):
                     'y': res_list
                     })
 
-    fig = figure(width=800, height=150, match_aspect=True, x_range=[-1, 31], y_range=[-1, 1],
+    fig = figure(width=500, height=100, match_aspect=True, x_range=[-1, 31], y_range=[-1, 1],
                     y_axis_label="lat dis")
-    scatter_res = fig.scatter('x', 'y', source=fig_source, line_width=2, size = 8 ,color = 'red', legend_label="lat dis")
+    scatter_res = fig.scatter('x', 'y', source=fig_source, line_width=2, size = 4 ,color = 'red', legend_label="lat dis")
     fig.line('x', 'y', source=fig_source)
     hover_tool_res_v = HoverTool(renderers=[scatter_res], tooltips=[("lat_dis", "@y"),
                                                             ("index", "@x"),
@@ -846,8 +863,9 @@ def plot_traj_lat_dis(traj_new):
     fig.add_tools(hover_tool_res_v)
     fig.toolbar.active_scroll = fig.select_one(WheelZoomTool)
     fig.legend.click_policy = 'hide'
-    output_notebook()
-    show(fig)
+    return fig
+    # output_notebook()
+    # show(fig)
 
 def plot_traj_omega_dot(traj_new):
     res_list = []
@@ -861,9 +879,9 @@ def plot_traj_omega_dot(traj_new):
                     'y': res_list
                     })
 
-    fig = figure(width=800, height=150, match_aspect=True, x_range=[-1, 31],
+    fig = figure(width=500, height=100, match_aspect=True, x_range=[-1, 31],
                     y_axis_label="omega dot [deg]")
-    scatter_res = fig.scatter('x', 'y', source=fig_source, line_width=2, size = 8 ,color = 'red', legend_label="omega dot")
+    scatter_res = fig.scatter('x', 'y', source=fig_source, line_width=2, size = 4 ,color = 'red', legend_label="omega dot")
     fig.line('x', 'y', source=fig_source)
     hover_tool_res_v = HoverTool(renderers=[scatter_res], tooltips=[("omega_dot", "@y"),
                                                             ("index", "@x"),
@@ -871,8 +889,9 @@ def plot_traj_omega_dot(traj_new):
     fig.add_tools(hover_tool_res_v)
     fig.toolbar.active_scroll = fig.select_one(WheelZoomTool)
     fig.legend.click_policy = 'hide'
-    output_notebook()
-    show(fig)
+    return fig
+    # output_notebook()
+    # show(fig)
 
 def plot_traj_theta(traj_new):
     res_list = []
@@ -886,9 +905,9 @@ def plot_traj_theta(traj_new):
                     'y': res_list
                     })
 
-    fig = figure(width=800, height=150, match_aspect=True, x_range=[-1, 31],
+    fig = figure(width=500, height=100, match_aspect=True, x_range=[-1, 31],
                     y_axis_label="Theta / degree")
-    scatter_res = fig.scatter('x', 'y', source=fig_source, line_width=2, size = 8 ,color = 'red', legend_label="res_theta")
+    scatter_res = fig.scatter('x', 'y', source=fig_source, line_width=2, size = 4 ,color = 'red', legend_label="res_theta")
     fig.line('x', 'y', source=fig_source)
     hover_tool_res_v = HoverTool(renderers=[scatter_res], tooltips=[("theta", "@y"),
                                                             ("index", "@x"),
@@ -896,8 +915,9 @@ def plot_traj_theta(traj_new):
     fig.add_tools(hover_tool_res_v)
     fig.toolbar.active_scroll = fig.select_one(WheelZoomTool)
     fig.legend.click_policy = 'hide'
-    output_notebook()
-    show(fig)
+    return fig
+    # output_notebook()
+    # show(fig)
 
 def plot_traj_omega(traj_new):
     res_list = []
@@ -920,13 +940,13 @@ def plot_traj_omega(traj_new):
                 'y': ref_list
                 })
 
-    fig = figure(width=800, height=150, match_aspect=True, x_range=[-1, 31],
+    fig = figure(width=500, height=100, match_aspect=True, x_range=[-1, 31],
                     y_axis_label="Omega / degree/s")
 
-    fig.scatter('x', 'y', source=fig_source, line_width=2, size = 8 ,color = 'red', legend_label="res_omega")
+    fig.scatter('x', 'y', source=fig_source, line_width=2, size = 4 ,color = 'red', legend_label="res_omega")
     fig.line('x', 'y', source=fig_source)
 
-    fig.scatter('x', 'y', source=ref_source, line_width=2, size = 8 ,color = 'blue', legend_label="ref_omega")
+    fig.scatter('x', 'y', source=ref_source, line_width=2, size = 4 ,color = 'blue', legend_label="ref_omega")
     fig.line('x', 'y', source=ref_source)
 
     hover_tool_res_v = HoverTool(tooltips=[("omega", "@y"),
@@ -935,8 +955,9 @@ def plot_traj_omega(traj_new):
     fig.add_tools(hover_tool_res_v)
     fig.toolbar.active_scroll = fig.select_one(WheelZoomTool)
     fig.legend.click_policy = 'hide'
-    output_notebook()
-    show(fig)
+    return fig
+    # output_notebook()
+    # show(fig)
 
 def plot_traj_curva(traj_new):
     res_list = []
@@ -996,11 +1017,11 @@ def plot_traj_acc_lat(traj_new):
                     'y': ref_list
                     })
     
-    fig = figure(width=800, height=150, match_aspect=True, x_range=[-1, 31])
-    fig.scatter('x', 'y', source=fig_source, line_width=2, size = 8 ,color = 'red', legend_label="res_acc_lat")
+    fig = figure(width=500, height=100, match_aspect=True, x_range=[-1, 31])
+    fig.scatter('x', 'y', source=fig_source, line_width=2, size = 4 ,color = 'red', legend_label="res_acc_lat")
     fig.line('x', 'y', source=fig_source)
     
-    fig.scatter('x', 'y', source=fig_source_ref, line_width=2, size = 8 ,color = 'blue', legend_label="ref_acc_lat")
+    fig.scatter('x', 'y', source=fig_source_ref, line_width=2, size = 4 ,color = 'blue', legend_label="ref_acc_lat")
     fig.line('x', 'y', source=fig_source_ref)
     hover_tool_res_v = HoverTool( tooltips=[("acc_lat", "@y"),
                                    ("index", "@x"),
@@ -1008,5 +1029,6 @@ def plot_traj_acc_lat(traj_new):
     fig.add_tools(hover_tool_res_v)
     fig.toolbar.active_scroll = fig.select_one(WheelZoomTool)
     fig.legend.click_policy = 'hide'
-    output_notebook()
-    show(fig)
+    return fig
+    # output_notebook()
+    # show(fig)

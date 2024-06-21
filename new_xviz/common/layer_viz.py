@@ -704,8 +704,8 @@ class LayerMultiPolygon(LayerBase):
             const data = source.data;
             data.xs.length = 0;
             data.ys.length = 0;
-            polygon_xs = data_js_list[closest_index].xs
-            polygon_ys = data_js_list[closest_index].ys
+            let polygon_xs = data_js_list[closest_index].xs
+            let polygon_ys = data_js_list[closest_index].ys
             for (let i = 0; i < polygon_xs.length; i++) {
                 data.xs.push(Array.from(polygon_xs[i]))
             }
@@ -719,7 +719,7 @@ class LayerMultiPolygon(LayerBase):
                                     data_js_list=self.layer_data_source_js_, 
                                     times=self.times_), code=callback_code)
 
-class LayerMultiPolygonId(LayerBase):
+class LayerMultiPolygonIDType(LayerBase):
     """
     传入的data_frame中的每个data, 必须是一个dict, 且dict包含两个二维list-xs和ys, 如
     {
@@ -807,10 +807,10 @@ class LayerMultiPolygonId(LayerBase):
             data.ys.length = 0;
             data.id.length = 0;
             data.obs_type.length = 0;
-            polygon_xs = data_js_list[closest_index].xs
-            polygon_ys = data_js_list[closest_index].ys
-            polygon_id = data_js_list[closest_index].id
-            polygon_obs_type = data_js_list[closest_index].obs_type
+            let polygon_xs = data_js_list[closest_index].xs
+            let polygon_ys = data_js_list[closest_index].ys
+            let polygon_id = data_js_list[closest_index].id
+            let polygon_obs_type = data_js_list[closest_index].obs_type
             for (let i = 0; i < polygon_xs.length; i++) {
                 data.xs.push(Array.from(polygon_xs[i]))
             }
@@ -1049,7 +1049,7 @@ class LayerScatterLcLonSearchSample(LayerBase):
                                     data_js_list=self.layer_data_source_js_, 
                                     times=self.times_), code=callback_code)
 
-class LayerMultiPolygonLcLonSearchObs(LayerBase):
+class LayerMultiPolygonID(LayerBase):
     """
     传入的data_frame中的每个data, 必须是一个dict, 且dict包含两个二维list-xs和ys, 如
     {
@@ -1133,8 +1133,8 @@ class LayerMultiPolygonLcLonSearchObs(LayerBase):
             const data = source.data;
             data.xs.length = 0;
             data.ys.length = 0;
-            polygon_xs = data_js_list[closest_index].xs
-            polygon_ys = data_js_list[closest_index].ys
+            let polygon_xs = data_js_list[closest_index].xs
+            let polygon_ys = data_js_list[closest_index].ys
             for (let i = 0; i < polygon_xs.length; i++) {
                 data.xs.push(Array.from(polygon_xs[i]))
             }

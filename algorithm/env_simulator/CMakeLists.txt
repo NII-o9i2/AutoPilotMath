@@ -15,8 +15,7 @@ add_library(${PROJECT_NAME} STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/free_space.cpp
 )
 target_link_libraries(${PROJECT_NAME}
-        math_common
-        Eigen3::Eigen
+        math_common_dd
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR})
@@ -27,7 +26,7 @@ find_package(pybind11 REQUIRED)
 pybind11_add_module(pybind_env_simulator
         ${CMAKE_CURRENT_SOURCE_DIR}/pybind_env_simulator.cpp)
 target_link_libraries(pybind_env_simulator PRIVATE
-        math_common
+        math_common_dd
         ${PROJECT_NAME}
 )
 
@@ -35,4 +34,4 @@ add_executable(test_env_simulator
         ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
 )
 # find_package(CGAL REQUIRED)
-target_link_libraries(test_env_simulator math_common ${PROJECT_NAME})
+target_link_libraries(test_env_simulator math_common_dd ${PROJECT_NAME})

@@ -1,0 +1,34 @@
+{
+  "name": "f_19",
+  "real_action": "010",
+  "change_direction": 0,
+  "desired_speed": 27,
+  "ego_obj": {
+    "ego_s": 0.0,
+    "ego_v": 24.9786067064511,
+    "lane_id": 0,
+    "ego_length": 4.886,
+    "ego_a": 0.13729310035705566
+  },
+  "lanes_objs": [
+    {
+      "cars": [],
+      "lane_id": 1
+    },
+    {
+      "cars": [
+        {
+          "car_length": 4.428645133972168,
+          "car_v": 21.868742516678818,
+          "car_a": 0.4580050847919336,
+          "car_s": 79.22425279473293
+        }
+      ],
+      "lane_id": 0
+    },
+    {
+      "cars": [],
+      "lane_id": -1
+    }
+  ]
+}

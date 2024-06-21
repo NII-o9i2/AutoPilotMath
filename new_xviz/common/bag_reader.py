@@ -21,6 +21,8 @@ LOCALIZATION_CHANNEL = '/localization/odomstate_info'
 SD_MAP_CHANNEL = '/ehr/sdmap'
 #scenemapping channel
 SCENEMAPPING_LOCALMAP_CHANNEL = '/scene_mapping/local_map'
+#mapless channel
+MAPLESS_CHANNEL = '/maplesslm/scene_navi_map'
 
 L4_DECISION_CHANNEL = '/decision_planning/decision_target'
 NAV_CHANNEL = '/localization/navstate_info'
@@ -166,6 +168,55 @@ def read_xdebug_msg(msg_json) -> dict:
         except KeyError:
             return None
         
+    def get_osp_debug(key):
+        try:
+            return json_msg['planner_debug'][key]
+        except KeyError:
+            return None
+        
+    def get_osp_mgr_task_debug(key):
+        try:
+            return json_msg['planner_debug']['osp_mgr_task_debug'][key]
+        except KeyError:
+            return None    
+            
+    def get_freespace_mgr_debug(key):
+        try:
+            return json_msg['planner_debug']['free_space_mgr_debug'][key]
+        except KeyError:
+            return None      
+
+    def get_interaction_search_debug():
+        try:
+            return json_msg['planner_debug']['interaction_search_debug']
+        except KeyError:
+            return None
+
+    def get_fake_sdmap_debug():
+        try:
+            return json_msg['planner_debug']['fake_sdmap_debug']
+        except KeyError:
+            return None 
+
+    def get_nn_traj_debug():
+        try:
+            return json_msg['planner_debug']['nn_traj_debug']
+        except KeyError:
+            return None 
+        
+    data['osp_ref_point_by_ego_car_debug'] = get_osp_debug('osp_ref_point_by_ego_car_debug')
+    data['osp_leader_car_history_pose_debug'] = get_osp_debug('osp_leader_car_history_pose_debug')
+    data['osp_ref_point_by_leader_car_debug'] = get_osp_debug('osp_ref_point_by_leader_car_debug')
+    data['osp_select_guide_lane_points'] = get_osp_debug('osp_select_guide_lane_points')
+    data['osp_guide_points_by_lane_points'] = get_osp_debug('osp_guide_points_by_lane_points')
+    data['osp_guide_points_theta_by_lane_points'] = get_osp_debug('osp_guide_points_theta_by_lane_points')
+    data['osp_raw_routing_path_points'] = get_osp_mgr_task_debug('raw_routing_path_points')
+    data['osp_raw_routing_path_omega'] = get_osp_mgr_task_debug('raw_routing_path_omega')
+    data['osp_motion_tree_points'] = get_osp_mgr_task_debug('motion_tree_points')
+    data['osp_motion_tree_speed_limit_seq'] = get_osp_mgr_task_debug('motion_tree_speed_limit')
+    data['osp_raw_routing_path_vel'] = get_osp_mgr_task_debug('raw_routing_path_vel')
+    data['fs_road_edges_points'] = get_freespace_mgr_debug('raw_road_edges')
+        
     data['nop_counter'] = get_planning_debug('nop_counter')
     
     # read wm debug info
@@ -237,6 +288,12 @@ def read_xdebug_msg(msg_json) -> dict:
     data['lat_lon_decider_debug'] = get_lat_lon_decider_debug()
 
     data['lat_lon_motion_debug'] = get_lat_lon_motion_debug()
+
+    data['interaction_search_debug'] = get_interaction_search_debug()
+
+    data['fake_sdmap_debug'] = get_fake_sdmap_debug()
+
+    data['nn_traj_debug'] = get_nn_traj_debug()
 
     return data
 
@@ -399,10 +456,41 @@ def read_l4_decision_debug_msg(msg_json) -> dict:
     # pprint(msg_json)
     return data
 
+
+def read_perception_msg(msg_json) -> dict:
+    data = {}
+    data['fusion_polygon'] = []
+    for FusionObject in msg_json['perceptionObjectList']:
+        tmp_obj = {}
+        tmp_obj['polygon'] = []
+        for point in FusionObject['polygonBox']['polygonContour']:
+            tmp_obj['polygon'].append({'x': point['x'], 'y': point['y']})
+        data['fusion_polygon'].append(tmp_obj)
+    return data
+
+
+def read_mapless_msg(msg_json) -> dict:
+    data = {}
+    sdmap_links_geo_points_list=[]
+    sdmap_start_node_geo_points_list=[]
+         
+    for link in msg_json['sdMap']['links']:
+        for point in link['geometry']:
+              sdmap_links_geo_points_list.append({'x': point['x'], 
+                                                  'y': point['y']})
+              
+    for node in msg_json['sdMap']['startLinkNodes']:
+        sdmap_start_node_geo_points_list.append({'x': node['position']['x'], 
+                                                 'y': node['position']['y']}) 
+                    
+    data['sdmap_points_list']=sdmap_links_geo_points_list
+    data['sdmap_node_points_list']=sdmap_start_node_geo_points_list
+    return data
+
 msg_callback_map = {
     PLANNING_CHANNEL: read_planning_msg,
 
-    # PERCEPTION_CHANNEL: read_perception_msg,
+    PERCEPTION_CHANNEL: read_perception_msg,
     PREDICTION_CHANNEL: read_prediction_msg,
 
     XDEBUG_CHANNEL: read_xdebug_msg,
@@ -413,7 +501,8 @@ msg_callback_map = {
     SCENEMAPPING_LOCALMAP_CHANNEL:read_scenemapping_localmap_msg,
     L4_DECISION_CHANNEL:read_l4_decision_msg,
     NAV_CHANNEL:read_l4_nav_msg,
-    DECISION_DEBUG_CHANNEL: read_l4_decision_debug_msg
+    DECISION_DEBUG_CHANNEL: read_l4_decision_debug_msg,
+    MAPLESS_CHANNEL: read_mapless_msg
     # CHASSIS_A_CHANNEL: read_vehicle_a_channel_msg,
     # VEHICLE_COMMAND_CHANNEL: read_vehicle_command_msg,
     # CONTROL_DEBUG_CHANNEL: read_control_debug_msg

@@ -42,4 +42,25 @@ double CalculateRadius(const Point2D& first_point,
   //             << std::endl;
   return radius;
 }
+
+bool is_float_equal(double a, double b) {
+  constexpr double kEps = 1e-4;
+  if (std::abs(a - b) < kEps) {
+    return true;
+  }
+  return false;
+}
+
+double normalize_angle(const double angle) {
+  double normalized_angle = angle;
+  if (normalized_angle > M_PI) {
+    normalized_angle = normalized_angle -
+                       std::round(normalized_angle / (2.0 * M_PI)) * 2.0 * M_PI;
+  } else if (normalized_angle < -1.0 * M_PI) {
+    normalized_angle =
+        normalized_angle +
+        std::round(normalized_angle / (-2.0 * M_PI)) * 2.0 * M_PI;
+  }
+  return normalized_angle;
+}
 }

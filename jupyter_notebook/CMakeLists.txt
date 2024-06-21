@@ -4,6 +4,8 @@ set(Python_INCLUDE_DIR "/Library/Frameworks/Python.framework/Versions/3.11/inclu
 
 include_directories(${Python_INCLUDE_DIR})
 
+find_package(pybind11 REQUIRED)
+
 pybind11_add_module(pybind_test
         ${CMAKE_CURRENT_SOURCE_DIR}/pybind_polyfit.cpp)
 

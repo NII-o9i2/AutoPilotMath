@@ -33,6 +33,7 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         self.build_lat_lon_motion_success_traj_omega_data_frame()
         self.build_lat_lon_motion_success_traj_vel_data_frame()
         self.build_lat_lon_motion_success_traj_theta_data_frame()
+        self.build_lat_lon_motion_success_traj_theta_data_frame()
         self.build_lat_lon_motion_success_traj_jerk_data_frame()
         self.build_lat_lon_motion_success_traj_omega_dot_data_frame()
         self.build_lat_lon_motion_3_refline_kappa_data_frame()
@@ -44,11 +45,21 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         self.build_lat_lon_motion_lead_s_data_frame()
         self.build_lat_lon_motion_v_ref_data_frame()
         self.build_lat_lon_motion_a_ref_data_frame()
+        self.build_osp_mgr_task_raw_routing_path_points_data_frame()
+        self.build_osp_mgr_task_raw_routing_path_omega_data_frame()
+        self.build_freespace_mgr_road_edges_points_data_frame()
+        self.build_osp_mgr_task_motion_tree_points_data_frame()
+        self.build_osp_mgr_task_motion_tree_speed_limit_data_frame()
+        self.build_osp_mgr_task_raw_routing_path_vel_data_frame()
+        self.build_fake_sdmap_path_data_frame()
+        self.build_fake_sdmap_intersection_point_data_frame()
+        self.build_nn_traj_point_data_frame()
+        self.build_nn_traj_v_data_frame()
 
         # 主图, 包含 obs_polygon, obs_traj, ego_polygon, lane
         main_figure_viz = FigureViz('Main_Figure', 'X', 'Y', width=750, height =900)
         self.add_layer_to_figure(main_figure_viz, args=dict(data_key='obs_first_polygon', \
-                                                                plot_type='multi_polygon', color='blue',  \
+                                                                plot_type='multi_polygon_id', color='blue',  \
                                                                 label='obs_first_polygon', fill_alpha=0, \
                                                                 line_alpha=0.4, line_width=4))
         self.add_layer_to_figure(main_figure_viz, args=dict(data_key='obs_traj_point', \
@@ -99,6 +110,30 @@ class XvizPlotLatLonMotion(XvizPlotBase):
                                                                 plot_type='scatter', color='darkgoldenrod',  \
                                                                 label='lat_lon_motion_match_point', \
                                                                 line_alpha=1, line_width=6))
+        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='raw_routing_pts', \
+                                                                plot_type='scatter', color='Teal',  \
+                                                                label='raw_routing_path_points', \
+                                                                line_alpha=1.0, line_width=6))     
+        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='motion_tree_points', \
+                                                                plot_type='scatter', color='Cyan',  \
+                                                                label='motion_tree_points', \
+                                                                line_alpha=1.0, line_width=6))  
+        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='raw_road_edges_pts', \
+                                                                plot_type='scatter', color="#63E398",  \
+                                                                label='road_edges_points', \
+                                                                line_alpha=1.0, line_width=6))
+        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='fake_sdmap_path_point', \
+                                                                plot_type='scatter', color='red',  \
+                                                                label='fake_sdmap_path', \
+                                                                line_alpha=1, line_width=6))
+        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='fake_sdmap_intersection_point', \
+                                                                plot_type='scatter', color='blue',  \
+                                                                label='fake_sdmap_intersection_point', \
+                                                                line_alpha=1, line_width=6))
+        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='nn_traj_point', \
+                                                                plot_type='scatter', color='blue',  \
+                                                                label='nn_traj_point', \
+                                                                line_alpha=1, line_width=6))
         self.figs_['main_fig'] = main_figure_viz.plot()
         callback_main_fig = main_figure_viz.get_callback_list()        
         
@@ -107,7 +142,8 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         nop_count_figure_viz = FigureViz('Nop_Counter', 'Index', 'Data', y_range=None, 
                                          width=1100 ,height = 150, match_aspect = False)
         self.add_layer_to_figure(nop_count_figure_viz, args=dict(data_key='nop_counter', \
-                                                                plot_type='single_point'))
+                                                                plot_type='single_point', \
+                                                                line_alpha=1, line_width=1))
         self.figs_['nop_count'] = nop_count_figure_viz.plot()
         callback_nop_count = nop_count_figure_viz.get_callback_list()
 
@@ -141,6 +177,13 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         self.add_layer_to_figure(motion_res_vel_figure_viz, args=dict(data_key='lat_lon_motion_v_ref', \
                                                                 plot_type='index_line_circle', color='red',  \
                                                                 label='ref_vel'))
+        self.add_layer_to_figure(motion_res_vel_figure_viz, args=dict(data_key='nn_traj_v', \
+                                                                plot_type='index_line_circle', color='black',  \
+                                                            label='nn_traj_v'))
+        self.add_layer_to_figure(motion_res_vel_figure_viz, args=dict(data_key='raw_routing_path_vel', \
+                                                                plot_type='index_line_circle', color='Cyan',  \
+                                                            label='raw_routing_path_vel'))
+        
         self.figs_['motion_res_vel'] = motion_res_vel_figure_viz.plot()
         callback_vel = motion_res_vel_figure_viz.get_callback_list()
 
@@ -219,12 +262,48 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         self.figs_['lead_s'] = lead_s_figure_viz.plot()
         callback_lead_s = lead_s_figure_viz.get_callback_list()
 
+         # osp routing path omega
+        osp_routing_path_omega_figure_viz = FigureViz(
+            "OSP_RoutingPath_Omega",
+            "Index",
+            "Data/degree/s",
+            x_range=[-1, 31],
+            y_range=[-10, 10],
+            width=550,
+            height=300,
+            match_aspect=False,
+        )
+        self.add_layer_to_figure(osp_routing_path_omega_figure_viz, args=dict(data_key='osp_routing_path_points_omega', \
+                                                                plot_type='index_line_circle', color='blue',  \
+                                                                label='osp_routing_path_omega'))
+        self.figs_["osp_rp_omega"] = osp_routing_path_omega_figure_viz.plot()
+        callback_osp_rt_omega = osp_routing_path_omega_figure_viz.get_callback_list()
+               
+        # osp motion tree speed limit
+        osp_motion_tree_speed_limit_figure_viz = FigureViz(
+            "OSP_MotionTree_SpdLimit",
+            "Index",
+            "Data/m/s",
+            x_range = [-1,31],
+            y_range = [-1, 35],
+            width=550,
+            height=300,
+            match_aspect=False,
+        )
+        self.add_layer_to_figure(osp_motion_tree_speed_limit_figure_viz, args=dict(data_key='osp_motion_tree_spdlimit_seq', \
+                                                                plot_type='index_line_circle', color='blue',  \
+                                                                label='osp_moiton_tree_spd_limit'))
+        self.figs_["osp_mt_speed_limit"] = osp_motion_tree_speed_limit_figure_viz.plot()
+        callback_osp_motion_tree_spd_limit = osp_motion_tree_speed_limit_figure_viz.get_callback_list()
+
         all_callback = [*callback_main_fig, *callback_nop_count, *callback_acc, 
                 *callback_omega, *callback_vel, *callback_theta,
                 *callback_omega_dot, *callback_refline_curvature, *callback_jerk,
                  *callback_lat_dis_to_ref_line,
                 *callback_ref_lat_acc, 
-                *callback_lead_s
+                *callback_lead_s,
+                *callback_osp_rt_omega,
+                *callback_osp_motion_tree_spd_limit
                 ]
 
         # 创建滑块        
@@ -238,16 +317,19 @@ class XvizPlotLatLonMotion(XvizPlotBase):
     
     def build_obs_first_polygon_data_frame(self):
         data_frame_new = []
-        data_frame = self.get_data_frame_at_datakey('obstacle_debug_pred_first_polygon')
-        for one_frame in data_frame:
+        data_frame = self.get_data_frame_at_datakey('obstacle_debug_pred_first_polygon')   
+        data_frame_ids = self.get_data_frame_at_datakey('obstacle_debug_id')
+        for one_frame, one_frame_id in zip(data_frame, data_frame_ids):
             one_frame_new = {}
             one_frame_new['t'] = one_frame['t']
             one_frame_new['index'] = one_frame['index']
 
             one_data = one_frame['data']
+            one_data_id = one_frame_id['data']
             xs = []
             ys = []
-            for one_obstacle_polygon in one_data:
+            ids = []
+            for one_obstacle_polygon, one_data_id  in zip(one_data, one_data_id):
                 x = []
                 y = []
                 for point in one_obstacle_polygon:
@@ -255,9 +337,11 @@ class XvizPlotLatLonMotion(XvizPlotBase):
                     y.append(point['y'])
                 xs.append(x)
                 ys.append(y)
+                ids.append(one_data_id)
             one_data_new = {
                     "xs": xs,
-                    "ys": ys
+                    "ys": ys,
+                    "obs_id": ids
                     }
             one_frame_new['data'] = one_data_new
             data_frame_new.append(one_frame_new)
@@ -313,6 +397,100 @@ class XvizPlotLatLonMotion(XvizPlotBase):
             one_frame_new['data'] = one_data_new
             data_frame_new.append(one_frame_new)
         self.set_data_frame_at_datakey('traj_channel', 'lat_lon_motion_success_traj_point', data_frame_new)
+
+    def build_fake_sdmap_path_data_frame(self):
+        data_frame_new = []
+        data_frame = self.get_data_frame_at_datakey('fake_sdmap_debug')
+        
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            x = []
+            y = []
+            if 'path_points' in one_frame['data']:
+                path_points = one_frame['data']['path_points']
+                for point in path_points:
+                    x.append(point['x'])
+                    y.append(point['y'])
+            one_data_new = {
+                    "x": x,
+                    "y": y
+                    }
+            one_frame_new['data'] = one_data_new
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey('', 'fake_sdmap_path_point', data_frame_new)
+
+    def build_nn_traj_point_data_frame(self):
+        data_frame_new = []
+        data_frame = self.get_data_frame_at_datakey('nn_traj_debug')
+        
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            x = []
+            y = []
+            if one_frame['data'] == None:
+                continue
+            if 'nn_traj' in one_frame['data']:
+                nn_traj = one_frame['data']['nn_traj']
+                for point in nn_traj:
+                    x.append(point['position']['x'])
+                    y.append(point['position']['y'])
+            one_data_new = {
+                    "x": x,
+                    "y": y
+                    }
+            one_frame_new['data'] = one_data_new
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey('', 'nn_traj_point', data_frame_new)
+        
+    def build_nn_traj_v_data_frame(self):
+        data_frame_new = []
+        data_frame = self.get_data_frame_at_datakey('nn_traj_debug')
+        
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            x = []
+            if one_frame['data'] == None:
+                continue
+            if 'nn_traj' in one_frame['data']:
+                nn_traj = one_frame['data']['nn_traj']
+                for point in nn_traj:
+                    x.append(point['v'])
+            one_frame_new['data'] = x
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey('', 'nn_traj_v', data_frame_new)
+    
+    def build_fake_sdmap_intersection_point_data_frame(self):
+        data_frame_new = []
+        data_frame = self.get_data_frame_at_datakey('fake_sdmap_debug')
+        
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            x = []
+            y = []
+            if 'intersection_points' in one_frame['data']:
+                intersection_points = one_frame['data']['intersection_points']
+                for point in intersection_points:
+                    x.append(point['x'])
+                    y.append(point['y'])
+            one_data_new = {
+                    "x": x,
+                    "y": y
+                    }
+            one_frame_new['data'] = one_data_new
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey('', 'fake_sdmap_intersection_point', data_frame_new)
     
     def build_lat_lon_motion_success_traj_acc_data_frame(self):
         data_frame_new = []
@@ -677,7 +855,137 @@ class XvizPlotLatLonMotion(XvizPlotBase):
             data_frame_new.append(one_frame_new)
         self.set_data_frame_at_datakey('', 'lat_lon_motion_a_ref', data_frame_new)
     
+    def build_osp_mgr_task_raw_routing_path_points_data_frame(self):
+        data_frame_new = []
+        data_frame = self.get_data_frame_at_datakey(
+            'osp_raw_routing_path_points')
 
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            x = []
+            y = []
+            
+            if one_frame['data'] is not None: 
+                for data in one_frame['data']:
+                    x.append(data['x'])
+                    y.append(data['y'])
+            one_data_new = {
+                    "x": x,
+                    "y": y
+                    }   
+            one_frame_new['data'] = one_data_new
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey(
+            '', 'raw_routing_pts', data_frame_new)
+        
+    def build_osp_mgr_task_motion_tree_points_data_frame(self):
+        data_frame_new = []
+        data_frame = self.get_data_frame_at_datakey(
+            'osp_motion_tree_points')
+
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            x = []
+            y = []
+            
+            if one_frame['data'] is not None: 
+                for data in one_frame['data']:
+                    x.append(data['x'])
+                    y.append(data['y'])
+            one_data_new = {
+                    "x": x,
+                    "y": y
+                    }   
+            one_frame_new['data'] = one_data_new
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey(
+            '', 'motion_tree_points', data_frame_new)
+        
+    def build_osp_mgr_task_raw_routing_path_omega_data_frame(self):
+        data_frame_new = []
+        data_frame = self.get_data_frame_at_datakey("osp_raw_routing_path_omega")
+
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new["t"] = one_frame["t"]
+            one_frame_new["index"] = one_frame["index"]
+            x = []
+            if one_frame['data'] is not None: 
+                for point in one_frame["data"]:
+                    x.append(radian_to_degree(point))
+            one_frame_new["data"] = x
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey(
+            "", "osp_routing_path_points_omega", data_frame_new
+        )
+        
+    def build_osp_mgr_task_motion_tree_speed_limit_data_frame(self):
+        data_frame_new = []
+        data_frame = self.get_data_frame_at_datakey("osp_motion_tree_speed_limit_seq")
+
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new["t"] = one_frame["t"]
+            one_frame_new["index"] = one_frame["index"]
+            x = []
+            if one_frame['data'] is not None: 
+                for point in one_frame["data"]:
+                    x.append(point)
+            one_frame_new["data"] = x
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey(
+            "", "osp_motion_tree_spdlimit_seq", data_frame_new
+        )
+        
+    def build_osp_mgr_task_raw_routing_path_vel_data_frame(self):
+        data_frame_new = []
+        data_frame = self.get_data_frame_at_datakey("osp_raw_routing_path_vel")
+
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new["t"] = one_frame["t"]
+            one_frame_new["index"] = one_frame["index"]
+            x = []
+            if one_frame['data'] is not None: 
+                for point in one_frame["data"]:
+                    x.append(point)
+            one_frame_new["data"] = x
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey(
+            "", "raw_routing_path_vel", data_frame_new
+        )
+ 
+    def build_freespace_mgr_road_edges_points_data_frame(self):
+        data_frame_new = []
+        data_frame = self.get_data_frame_at_datakey(
+            'fs_road_edges_points')
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            x = []
+            y = []
+            
+            if one_frame['data'] is not None: 
+                for data in one_frame['data']:
+                    x.append(data['x'])
+                    y.append(data['y'])
+            one_data_new = {
+                    "x": x,
+                    "y": y
+                    }   
+            one_frame_new['data'] = one_data_new
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey(
+            '', 'raw_road_edges_pts', data_frame_new)
+                       
     def build_ego_polygon_data_frame(self):
         data_frame_new = []
         data_frame = self.get_data_frame_at_datakey('ego_info_debug')
@@ -995,7 +1303,7 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         self.set_data_frame_at_datakey('point_channel', 'ego_lane_center_dist_to_right', data_frame_new)
     
     def add_check_group(self):
-        for fig_name in ['motion_res_jerk', 'motion_res_acc','motion_res_vel','lead_s',
+        for fig_name in ['motion_res_jerk', 'motion_res_acc','motion_res_vel','lead_s','osp_rp_omega','osp_mt_speed_limit',
                      'motion_res_omega_dot','motion_res_omega','motion_res_theta','lat_dis_to_ref_line','ref_lat_acc',
                      'refline_curvature']:
             fig = self.figs_[fig_name]
@@ -1011,7 +1319,9 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         left = column(self.checkbox_groups_['motion_res_jerk'],self.figs_['motion_res_jerk'],
                       self.checkbox_groups_['motion_res_acc'],self.figs_['motion_res_acc'],
                       self.checkbox_groups_['motion_res_vel'],self.figs_['motion_res_vel'],
-                      self.checkbox_groups_['lead_s'],self.figs_['lead_s'])
+                      self.checkbox_groups_['lead_s'],self.figs_['lead_s'],
+                      self.checkbox_groups_['osp_rp_omega'],self.figs_['osp_rp_omega'],
+                      self.checkbox_groups_['osp_mt_speed_limit'], self.figs_['osp_mt_speed_limit'])
         right = column(self.checkbox_groups_['motion_res_omega_dot'],self.figs_['motion_res_omega_dot'],
                        self.checkbox_groups_['refline_curvature'],self.figs_['refline_curvature'],
                        self.checkbox_groups_['motion_res_omega'],self.figs_['motion_res_omega'],

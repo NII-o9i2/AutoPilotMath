@@ -55,7 +55,7 @@ class XvizPlotWM(XvizPlotBase):
                                                                 line_alpha=0.4, line_width=3))
         
         self.add_layer_to_figure(main_figure_viz, args=dict(data_key='obstacle_polygon', \
-                                                                plot_type='multi_polygon_id', color='blue',  \
+                                                                plot_type='multi_polygon_id_type', color='blue',  \
                                                                 label='obstacle_polygon', fill_alpha=0, \
                                                                 line_alpha=0.4, line_width=4))
 

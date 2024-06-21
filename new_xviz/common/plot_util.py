@@ -41,14 +41,14 @@ class PlotUtils:
                 fig.add_layer(LayerSinglePoint, args)
             if plot_type == 'multi_polygon':
                 fig.add_layer(LayerMultiPolygon, args)
-            if plot_type == 'multi_polygon_id':
-                fig.add_layer(LayerMultiPolygonId, args)
+            if plot_type == 'multi_polygon_id_type':
+                fig.add_layer(LayerMultiPolygonIDType, args)
             if plot_type == 'multi_ellipse':
                 fig.add_layer(LayerMultiEllipse, args)
             if plot_type == 'scatter_lc_lon_search_sample':
                 fig.add_layer(LayerScatterLcLonSearchSample, args)
-            if plot_type == 'multi_polygon_lc_lon_search_obs':
-                fig.add_layer(LayerMultiPolygonLcLonSearchObs, args)
+            if plot_type == 'multi_polygon_id':
+                fig.add_layer(LayerMultiPolygonID, args)
     
     @staticmethod
     def activate_figure_option(figs):

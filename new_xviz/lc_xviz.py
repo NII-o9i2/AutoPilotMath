@@ -90,9 +90,17 @@ class XvizPlotLc(XvizPlotBase):
                                                                 plot_type='scatter', color='hotpink',  \
                                                                 label='left_lane_center_point', \
                                                                 line_alpha=0.2, line_width=4))
+        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='ego_raw_left_lane_center_point', \
+                                                        plot_type='scatter', color='black',  \
+                                                        label='raw_left_lane_center_point', \
+                                                        line_alpha=0.2, line_width=4))
         self.add_layer_to_figure(main_figure_viz, args=dict(data_key='right_lane_center_point', \
                                                                 plot_type='scatter', color='indianred',  \
                                                                 label='right_lane_center_point', \
+                                                                line_alpha=0.2, line_width=4))
+        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='ego_raw_right_lane_center_point', \
+                                                                plot_type='scatter', color='green',  \
+                                                                label='raw_right_lane_center_point', \
                                                                 line_alpha=0.2, line_width=4))
         self.add_layer_to_figure(main_figure_viz, args=dict(data_key='traj_point', \
                                                                 plot_type='scatter', color='green',  \
@@ -110,7 +118,8 @@ class XvizPlotLc(XvizPlotBase):
         nop_count_figure_viz = FigureViz('Nop_Counter', 'Index', 'Data', y_range=None, 
                                          width=600 ,height = 150, match_aspect = False)
         self.add_layer_to_figure(nop_count_figure_viz, args=dict(data_key='nop_counter', \
-                                                                plot_type='single_point'))
+                                                                plot_type='single_point', \
+                                                                    line_alpha=1, line_width=1))
         self.figs_['nop_count'] = nop_count_figure_viz.plot()
         callback_nop_count = nop_count_figure_viz.get_callback_list()
 
@@ -118,7 +127,8 @@ class XvizPlotLc(XvizPlotBase):
         traj_update_figure_viz = FigureViz('Origin_Update', 'Index', 'Data', y_range=[-1, 2], 
                                            width=600 ,height = 150)
         self.add_layer_to_figure(traj_update_figure_viz, args=dict(data_key='updatedByVehicleStatus', \
-                                                                plot_type='single_point'))
+                                                                plot_type='single_point',\
+                                                                line_alpha=1, line_width=1))
         self.figs_['traj_update'] = traj_update_figure_viz.plot()
         callback_traj_update = traj_update_figure_viz.get_callback_list()
 
@@ -258,18 +268,18 @@ class XvizPlotLc(XvizPlotBase):
         # lc lon search st
         fig_lc_lon_search_st = FigureViz('Lc_Lon_Search_T_S', 'T/s', 'S/m', width=600, height =600, x_range=[-1, 7])
         self.add_layer_to_figure(fig_lc_lon_search_st, args=dict(data_key='lc_lon_search_st_obs_polygon', \
-                                                                plot_type='multi_polygon_lc_lon_search_obs', color='hotpink',  \
+                                                                plot_type='multi_polygon_id', color='hotpink',  \
                                                                 label='obs_polygon', fill_alpha=0.6, \
                                                                 fill_color='red',
-                                                                line_alpha=0.4, size=4))
+                                                                line_alpha=0.4, size=4, line_width=1))
         self.add_layer_to_figure(fig_lc_lon_search_st, args=dict(data_key='lc_lon_search_st_res', \
                                                         plot_type='line_scatter', color='coral',  \
                                                         label='st_res', \
-                                                        line_alpha=0.2, size=6))
+                                                        line_alpha=0.2, size=6, line_width=1))
         self.add_layer_to_figure(fig_lc_lon_search_st, args=dict(data_key='lc_lon_search_st_sample_point', \
                                                         plot_type='scatter_lc_lon_search_sample', \
                                                         label='st_sample_point', \
-                                                        line_alpha=1, size=10))
+                                                        line_alpha=1, size=10, line_width=1))
         self.figs_['lc_lon_search_st'] = fig_lc_lon_search_st.plot()
         callback_lc_lon_search_st = fig_lc_lon_search_st.get_callback_list()  
 
@@ -278,11 +288,11 @@ class XvizPlotLc(XvizPlotBase):
         self.add_layer_to_figure(fig_lc_lon_search_vt, args=dict(data_key='lc_lon_search_vt_res', \
                                                         plot_type='line_scatter', color='coral',  \
                                                         label='vt_res', \
-                                                        line_alpha=0.2, size=6))
+                                                        line_alpha=0.2, size=6, line_width=1))
         self.add_layer_to_figure(fig_lc_lon_search_vt, args=dict(data_key='lc_lon_search_vt_limit', \
                                                         plot_type='scatter', color='blue',  \
                                                         label='vt_limit', \
-                                                        line_alpha=0.2, size=6))
+                                                        line_alpha=0.2, size=6,line_width=1))
         self.figs_['lc_lon_search_vt'] = fig_lc_lon_search_vt.plot()
         callback_lc_lon_search_vt = fig_lc_lon_search_vt.get_callback_list()       
 
@@ -855,6 +865,8 @@ class XvizPlotLc(XvizPlotBase):
     def build_lane_data_frame(self):
         self.build_ego_lane_center_point_data_frame()
         self.build_ego_lane_raw_center_point_data_frame()
+        self.build_left_lane_raw_center_point_data_frame()
+        self.build_right_lane_raw_center_point_data_frame()
         self.build_ego_lane_left_bound_point_data_frame()
         self.build_ego_lane_right_bound_point_data_frame()
         self.build_left_lane_center_point_data_frame()
@@ -907,6 +919,55 @@ class XvizPlotLc(XvizPlotBase):
             one_frame_new['data'] = one_data_new
             data_frame_new.append(one_frame_new)
         self.set_data_frame_at_datakey('point_channel', 'ego_raw_lane_center_point', data_frame_new)
+
+    def build_left_lane_raw_center_point_data_frame(self):
+        data_frame = self.get_data_frame_at_datakey('lane_debug')
+        data_frame_new = []
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            one_data = one_frame['data']
+            x = []
+            y = []
+            for lane_debug in one_data:
+                if lane_debug['id'] == -1:
+                    for point in lane_debug['raw_points']:
+                        x.append(point['x'])
+                        y.append(point['y'])
+            one_data_new = {
+                    "x": x,
+                    "y": y
+                    }
+            one_frame_new['data'] = one_data_new
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey('point_channel', 'ego_raw_left_lane_center_point', data_frame_new)
+        
+    def build_right_lane_raw_center_point_data_frame(self):
+        data_frame = self.get_data_frame_at_datakey('lane_debug')
+        data_frame_new = []
+        for one_frame in data_frame:
+            one_frame_new = {}
+            one_frame_new['t'] = one_frame['t']
+            one_frame_new['index'] = one_frame['index']
+
+            one_data = one_frame['data']
+            x = []
+            y = []
+            for lane_debug in one_data:
+                if lane_debug['id'] == 1:
+                    for point in lane_debug['raw_points']:
+                        x.append(point['x'])
+                        y.append(point['y'])
+            one_data_new = {
+                    "x": x,
+                    "y": y
+                    }
+            one_frame_new['data'] = one_data_new
+            data_frame_new.append(one_frame_new)
+        self.set_data_frame_at_datakey('point_channel', 'ego_raw_right_lane_center_point', data_frame_new)
+
 
     def build_ego_lane_left_bound_point_data_frame(self):
         data_frame = self.get_data_frame_at_datakey('lane_debug')

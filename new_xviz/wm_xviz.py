@@ -84,7 +84,8 @@ class XvizPlotWM(XvizPlotBase):
         nop_count_figure_viz = FigureViz('Nop_Counter', 'Index', 'Data', y_range=None, 
                                          width=400 ,height = 400)
         self.add_layer_to_figure(nop_count_figure_viz, args=dict(data_key='nop_counter', \
-                                                                plot_type='single_point'))
+                                                                plot_type='single_point', \
+                                                                    line_alpha=1, line_width=1))
         self.figs_['nop_count'] = nop_count_figure_viz.plot()
         callback_nop_count = nop_count_figure_viz.get_callback_list()
 

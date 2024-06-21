@@ -1,0 +1,22 @@
+{
+  "name": "case1_empty_3_lanes",
+  "real_action": "010",
+  "change_direction": 0,
+  "lanes_objs": [
+    {
+      "lane_id": -1,
+      "cars": [
+      ]
+    },
+    {
+      "lane_id": 0,
+      "cars": [
+      ]
+    },
+    {
+      "lane_id": 1,
+      "cars": [
+      ]
+    }
+  ]
+}

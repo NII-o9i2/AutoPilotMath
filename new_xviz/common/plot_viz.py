@@ -1,7 +1,7 @@
 import bokeh
 import math
 from bokeh.io import curdoc
-from bokeh.plotting import figure, show, output_file , output_notebook
+from bokeh.io import show, output_file , output_notebook
 from bokeh.models import WheelZoomTool
 from bokeh.layouts import column, row
 from bokeh.models import ColumnDataSource, CustomJS, Slider
@@ -13,6 +13,7 @@ from bokeh.transform import linear_cmap
 import argparse
 import numpy as np
 from common.bag_reader import * 
+from common.json_reader import *
 from common.layer_viz import *
 from common.plot_util import * 
 import rsclpy
@@ -20,16 +21,23 @@ from bokeh.models import CustomJS, CheckboxButtonGroup
 from pprint import pprint
 from decimal import Decimal
 import pandas as pd
+from enum import Enum
+import os
 
+class InputFileType(Enum):
+    RSCLBAG = 1
+    JSON = 2
+    OTHER = 3
 
 class XvizPlotBase:
-    def __init__(self,bag_path,output) -> None:
-        self.bag_path_ = bag_path
+    def __init__(self,file_input_path,output) -> None:
+        self.file_input_path_ = file_input_path
+        self.input_file_type = InputFileType.OTHER
         self.output_ = output
         self.figs_ = {}
         self.data_set_ = {}
         self.required_channel_list_ = []
-        self.read_bag_flag_ = False
+        self.read_input_flag_ = False
         self.data_frame_ = {}
         self.checkbox_groups_ = {}
         pass
@@ -41,7 +49,7 @@ class XvizPlotBase:
         print("*" * 30 + " begin py bag reader " + "*" * 30)
         attr = rsclpy.BagReaderAttribute()
         attr.included_channels = set(self.required_channel_list_)
-        bag_reader = rsclpy.BagReader(self.bag_path_,attr)
+        bag_reader = rsclpy.BagReader(self.file_input_path_,attr)
         if not bag_reader.is_valid():
             print("Error: bag is invalid! Exit")
             return
@@ -68,7 +76,7 @@ class XvizPlotBase:
             tmp_data = msg_callback_map[tmp_msg.channel_name](tmp_msg.message_json)
 
             self.data_set_[tmp_msg.channel_name].append({tmp_msg.timestamp * 1e-9:tmp_data})
-        self.read_bag_flag_ = True
+        self.read_input_flag_ = True
         # pprint(self.data_set_)
         return
     
@@ -78,35 +86,34 @@ class XvizPlotBase:
         data_frame是一个list, list的每个元素都是一个dict
         dict中包含data, index, t这几项信息
         """
-
         for channel_name, channel_entries in self.data_set_.items():
             self.data_frame_[channel_name] = {}
-
-            # add data_key here if don't want it to be processed by nested_key  
-            list_data_key_not_process_nested = ['lane_debug','lat_lon_decider_debug','positionEnu',
-                                                'currentReflineEnu','targetReflineEnu', 'ego_traj',
-                                                'lat_lon_motion_debug',
-                                                'lc_lon_search_debug', 'lc_lat_search_debug']
-
             for channel_msg_index, channel_entry in enumerate(channel_entries):
                 for time_key, sub_dict in channel_entry.items():
                     for data_key, value in sub_dict.items():
-                        if isinstance(value, list) and value and isinstance(value[0], dict) \
-                        and data_key not in list_data_key_not_process_nested:
-                            nested_keys = value[0].keys()
-                            
-                            for nested_key in nested_keys:
-                                new_key = "{}_{}".format(data_key, nested_key)
-                                self.data_frame_[channel_name].setdefault(new_key, [])
-                                nested_data = [item[nested_key] for item in value]
-                                self.data_frame_[channel_name][new_key].append({'data': nested_data, 
-                                                                            'index': channel_msg_index, 
-                                                                             't': time_key})
+                        if data_key == 'obstacle_debug':
+                            for data_key, value in sub_dict.items():
+                                if data_key == 'obstacle_debug':
+                                    if value:  # 检查value是否非空
+                                        nested_keys = value[0].keys()
+                                        for nested_key in nested_keys:
+                                            new_key = "{}_{}".format(data_key, nested_key)
+                                            self.data_frame_[channel_name].setdefault(new_key, [])
+                                            nested_data = []
+                                            for obs in value:
+                                                nested_value = obs[nested_key]
+                                                nested_data.append(nested_value)
+                                            self.data_frame_[channel_name][new_key].append({'data': nested_data, 
+                                                                                            'index': channel_msg_index, 
+                                                                                            't': time_key})
+                                    else:
+                                        # print("Warning: 'obstacle_debug' data is empty.")
+                                        pass
                         else:
                             self.data_frame_[channel_name].setdefault(data_key, [])
                             self.data_frame_[channel_name][data_key].append({'data': value, 
                                                                             'index': channel_msg_index, 
-                                                                           't': time_key})
+                                                                                't': time_key})
         # pprint(self.data_frame_) 
         return      
  
@@ -138,11 +145,43 @@ class XvizPlotBase:
         print("*" * 30 + " finish relative time process " + "*" * 30)
         return
     
+    def get_file_type(self):
+        file_extension = os.path.splitext(self.file_input_path_)[1][1:].lower()
+        if file_extension == 'rsclbag':
+            self.input_file_type = InputFileType.RSCLBAG
+        elif file_extension == 'json':
+            self.input_file_type = InputFileType.JSON
+        else:
+            self.input_file_type = InputFileType.OTHER
+
+    def read_json(self):
+        try:
+            with open(self.file_input_path_, 'r', encoding='utf-8') as file:
+                print("*" * 30 + " one frame json reader and plot" + "*" * 30)
+                data = json.load(file)
+                for channel, func in json_callback_map.items():
+                    if channel in data:
+                        processed_data = func(data[channel])
+                        self.data_set_[channel] = [{str(1): processed_data}]
+                self.read_input_flag_ = True
+        except FileNotFoundError:
+            return "文件未找到。"
+        except json.JSONDecodeError:
+            return "文件不是有效的JSON格式。"
+            
     def read_msg(self):
-        if self.read_bag_flag_  == False:
-            self.read_bag()
-            self.match_timestamp()
-            self.construct_msg()
+        if self.read_input_flag_  == False:
+            self.get_file_type()
+            if self.input_file_type == InputFileType.RSCLBAG:
+                self.read_bag()
+                self.match_timestamp()
+                self.construct_msg()
+            elif self.input_file_type == InputFileType.JSON:
+                self.read_json()
+                self.bag_time_length_ = 0.1
+                self.construct_msg()
+            else: 
+                pass
 
     def get_data_frame_at_datakey(self, _key_name, _channel_name = None):
         result = {}
@@ -181,7 +220,7 @@ class XvizPlotBase:
 
     def add_slider(self):
         # times = self.get_common_time_list()
-        _end = 39.9
-        self.time_slider_ = Slider(start=0.0, end=_end, 
+        # _end = 39.9
+        self.time_slider_ = Slider(start=0.0, end=self.bag_time_length_, 
                                    value=0.0, step=0.1, title="Time")
         return

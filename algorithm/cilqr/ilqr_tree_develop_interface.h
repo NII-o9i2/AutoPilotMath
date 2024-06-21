@@ -24,6 +24,10 @@ class ILQRDevelopEnvInterface : public ILQREnvInterface {
   //  FuncReturn<MathUtils::Point2D> get_nearest_point(const MathUtils::Point2D
   //  &pos) override;
   FuncReturn<double> get_lane_s(const MathUtils::Point2D& pos) override;
+  FuncReturn<InterfacePursuitPointInfo> get_pursuit_point_info(const InterfaceVehicleInfo& vehicle_info) override {
+    InterfacePursuitPointInfo info;
+    return FuncReturn<InterfacePursuitPointInfo>{FuncStatus::FuncFailed,info};
+  };
 
  private:
   std::shared_ptr<EnvSim::EnvSimulator> env_simulator_;

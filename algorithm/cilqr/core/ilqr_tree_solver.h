@@ -9,7 +9,9 @@
 #include "chrono"
 #include "memory"
 #include "utils.h"
-#include "Eigen/Eigen"
+#include "Eigen/Core"
+#include "Eigen/Dense"
+#include "Eigen/LU"
 #include "common_struct.h"
 #include "core/ilqr_tree_interface.h"
 #include "core/ilqr_lon_condition.h"
@@ -112,6 +114,7 @@ struct LonObstacleInfo {
   double s = 0.0;
   double length = 0.0;
   double theta = 0.0;
+  bool is_behind_car = false;
   MathUtils::Point2D position;
   MathUtils::Point2D v;
   MathUtils::Point2D a;
@@ -119,6 +122,7 @@ struct LonObstacleInfo {
   double ellipse_b = 0.0;
   std::vector<double> dodge_g;
   bool overlap = false;
+  ObstacleType type = Real;
 };
 
 struct StepCondition {
@@ -152,6 +156,12 @@ struct StepCondition {
 
   bool has_constraint_acc_lat = false;
   bool has_constraint_omega = false;
+
+  double speed_limit = 16.67;
+
+  // for V2 model
+  double pursuit_omega = 0.0;
+  MathUtils::Point2D pursuit_point;
 };
 
 class SolverSpace {
@@ -224,6 +234,9 @@ enum SolverFuncType {
 struct ILQRParam {
   IDMParam idm_param;
   VehicleParam vehicle_param;
+  // POILQR param
+  bool enable_multi_mode = false;
+  int multi_horizon = 15;
   // solver param
   SolverFuncType solver_func_type = SolverFuncType::LonLatWithoutDodge;
   double delta_t = 0.2;
@@ -247,6 +260,7 @@ struct ILQRParam {
   int state_size = 4;
   int action_size = 2;
   // lon param
+  bool use_extern_ref = false;
   double w_ref_v = 25.0;
   double w_ref_a = 1.0;
   SoftConstraintParam jerk_param{0.0, 0.0};
@@ -262,20 +276,20 @@ struct ILQRParam {
   double consider_time = 1.0;
   double consider_min_dis = 10.0;
   std::vector<double> w_v_std_list = {5.0, 20.0};
-  std::vector<double> w_ref_line_list = {20.0, 6.0};
-  std::vector<double> w_ref_point_list = {20.0, 4.0};
-  std::vector<double> w_ref_dis_std_list = {30.0, 8.0};
+  std::vector<double> w_ref_line_list = {0.0, 0.0};
+  std::vector<double> w_ref_point_list = {6.0, 4.0};
+  std::vector<double> w_ref_dis_std_list = {10.0, 8.0};
   std::vector<double> w_ref_dis_max_list = {6.0, 6.0};
   std::vector<double> w_ref_point_dis_max_list = {10.0, 10.0};
   double w_ref_omega = 2.0;
   double w_ref_omega_dot = 10.0;
   double curvature_max = 0.5;
   double acc_lat_max = 2.5;
-  double omega_dot_thr = 0.0676; // 0.26 * 0.26 (15 deg)
-  double consider_omega_dot_thr = 0.00761; // 0.087 * 0.087 (5 deg)
+  double omega_dot_thr = 0.030461742;       // 0.17 * 0.17 (10 deg)
+  double consider_omega_dot_thr = 0.00761;  // 0.087 * 0.087 (5 deg)
   HardConstraintParam lat_acc_constraint_param{0.08};
   SoftConstraintParam lat_acc_constraint_exp_param{1, 100.0};
-  HardConstraintParam omega_dot_constraint_param{1.0 };
+  HardConstraintParam omega_dot_constraint_param{1.0};
   SoftConstraintParam omega_dot_constraint_exp_param{10.0, 100.0};
   // comfort param
   double w_ref_acc_lat = 0.0;
@@ -283,7 +297,8 @@ struct ILQRParam {
   bool enable_dodge = false;
   double consider_g_thr = -0.5;
   HardConstraintParam dodge_pose_constraint_param{0.5};
-  SoftConstraintParam dodge_pose_constraint_exp_param{5, 10.0};
+  SoftConstraintParam dodge_pose_constraint_exp_param{20.0, 10.0};
+  double dodge_lat_dis = 0.5;
 };
 
 struct LonDebugInfo {
@@ -327,23 +342,24 @@ class VehicleModelBicyclePlus {
   std::vector<double> step_std(const std::vector<double> &state_std,
                                const std::vector<double> &action_std);
 
-  void get_all_element(const int &frame_count,
+  virtual void get_all_element(const int &frame_count,
                        const std::shared_ptr<ILQREnvInterface> &env_ptr,
                        const std::shared_ptr<ILQR::SolverSpace> &pre_space_ptr,
                        std::shared_ptr<ILQR::SolverSpace> &space_ptr) const;
 
-  void condition_init(const int &frame_count,
+  virtual void condition_init(const int &frame_count,
                       const std::shared_ptr<ILQREnvInterface> &env_ptr,
-                      ILQR::StepCondition &l_condition) const;
+                      ILQR::StepCondition &l_condition,
+                      MathUtils::Point2D ego_init_position) const;
 
-  void get_l_condition(const int &frame_count,
+  virtual void get_l_condition(const int &frame_count,
                        const Eigen::VectorXd &pre_state,
                        const Eigen::VectorXd &state,
                        ILQR::StepCondition &pre_l_condition,
                        const std::shared_ptr<ILQREnvInterface> &env_ptr,
                        ILQR::StepCondition &l_condition) const;
 
-  void get_l(const Eigen::VectorXd &state,
+  virtual void get_l(const Eigen::VectorXd &state,
              const Eigen::VectorXd &action,
              const ILQR::StepCondition &condition,
              int frame_count,
@@ -351,18 +367,50 @@ class VehicleModelBicyclePlus {
              double &l_lat,
              double &l_lon) const;
 
-  void get_l_f(const Eigen::VectorXd &state,
+  virtual void get_l_f(const Eigen::VectorXd &state,
                const ILQR::StepCondition &condition,
                double &l_f) const;
 
-  const ILQR::ILQRParam& get_param() const {
-    return param_;
-  }
+  const ILQR::ILQRParam &get_param() const { return param_; }
 
- private:
+ protected:
   ILQR::ILQRParam param_;
   int state_size_ = 6;
   int action_size_ = 2;
+};
+
+class VehicleModelBicyclePlusV2 : public VehicleModelBicyclePlus {
+ public:
+  void get_all_element(const int &frame_count,
+                       const std::shared_ptr<ILQREnvInterface> &env_ptr,
+                       const std::shared_ptr<ILQR::SolverSpace> &pre_space_ptr,
+                       std::shared_ptr<ILQR::SolverSpace> &space_ptr) const override;
+
+  void condition_init(const int &frame_count,
+                      const std::shared_ptr<ILQREnvInterface> &env_ptr,
+                      ILQR::StepCondition &l_condition,
+                      MathUtils::Point2D ego_init_position) const override;
+
+  void get_l_condition(const int &frame_count,
+                       const Eigen::VectorXd &pre_state,
+                       const Eigen::VectorXd &state,
+                       ILQR::StepCondition &pre_l_condition,
+                       const std::shared_ptr<ILQREnvInterface> &env_ptr,
+                       ILQR::StepCondition &l_condition) const override;
+
+  void get_l(const Eigen::VectorXd &state,
+             const Eigen::VectorXd &action,
+             const ILQR::StepCondition &condition,
+             int frame_count,
+             double &l,
+             double &l_lat,
+             double &l_lon) const override;
+
+//  void get_l_f(const Eigen::VectorXd &state,
+//               const ILQR::StepCondition &condition,
+//               double &l_f) const override;
+
+
 };
 
 class SolverInput {
@@ -567,6 +615,8 @@ class TrajectoryTreeManager {
     }
     return res;
   }
+
+  double get_tree_l_sum() { return tree_node_list_.get_l_sum(); }
 
  private:
   int not_converged_counter_ = 0;

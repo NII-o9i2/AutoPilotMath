@@ -83,9 +83,9 @@ void LateralLongitudinalMotion::execute_tree() {
 
   // 1.3 init param
   ILQR::ILQRParam param;
-  if (enable_dodge_){
+  if (enable_dodge_) {
     param.solver_func_type = ILQR::SolverFuncType::LonLatWithDodge;
-  }else{
+  } else {
     param.solver_func_type = ILQR::SolverFuncType::LonLatWithoutDodge;
   }
 

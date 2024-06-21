@@ -31,7 +31,9 @@ struct LateralLongitudinalMotionInput {
 
 class LateralLongitudinalMotion {
  public:
-  void init(const std::string &file_path, const PlanningPoint &planning_point, bool enable_dodge);
+  void init(const std::string &file_path,
+            const PlanningPoint &planning_point,
+            bool enable_dodge);
   void init(const std::string &file_path, const PlanningPoint &planning_point);
 
   const EnvSim::EnvSimulator &get_env() const { return input_.env; }

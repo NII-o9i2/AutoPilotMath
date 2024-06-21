@@ -9,6 +9,20 @@
 namespace py = pybind11;
 
 PYBIND11_MODULE(pybind_ilqr, m) {
+  py::class_<ILQR::IDMLongiProfile>(m, "IDMLongiProfile")
+      .def(py::init<>())
+      .def_readwrite("s", &ILQR::IDMLongiProfile::s)
+      .def_readwrite("v", &ILQR::IDMLongiProfile::v)
+      .def_readwrite("a", &ILQR::IDMLongiProfile::a);
+
+  py::class_<ILQR::IDMCarInfo>(m, "IDMCarInfo")
+      .def(py::init<double, double, double, double>())
+      .def_readwrite("car_s", &ILQR::IDMCarInfo::car_s)
+      .def_readwrite("car_v", &ILQR::IDMCarInfo::car_v)
+      .def_readwrite("car_a", &ILQR::IDMCarInfo::car_a)
+      .def_readwrite("car_length", &ILQR::IDMCarInfo::car_length)
+      .def("print_car_info", &ILQR::IDMCarInfo::print_car_info);
+
   py::class_<ILQR::IDMParam>(m, "IDMParam")
       .def(py::init<>())
       .def_readwrite("delta", &ILQR::IDMParam::delta)
@@ -29,7 +43,17 @@ PYBIND11_MODULE(pybind_ilqr, m) {
       .def_readwrite("desired_spd", &ILQR::IDMParam::desired_spd);
 
   py::class_<ILQR::LongitudinalOperator>(m, "LongitudinalOperator")
-      .def_static("calc_idm_acc", &ILQR::LongitudinalOperator::calc_idm_acc)
+      .def_static("calc_longi_profile",
+                  &ILQR::LongitudinalOperator::calc_longi_profile)
+      .def_static("calc_idm_acc",
+                  static_cast<std::pair<double, double> (*)(
+                      const ILQR::IDMParam &, double, double, double, int)>(
+                      &ILQR::LongitudinalOperator::calc_idm_acc))
+      .def_static(
+          "calc_idm_acc_with_limit",
+          static_cast<std::pair<double, double> (*)(
+              const ILQR::IDMParam &, double, double, double, double, int)>(
+              &ILQR::LongitudinalOperator::calc_idm_acc))
       .def_static("linear_interpolate",
                   &ILQR::LongitudinalOperator::linear_interpolate)
       .def_static("calc_cah_acc", &ILQR::LongitudinalOperator::calc_cah_acc)
@@ -83,13 +107,15 @@ PYBIND11_MODULE(pybind_ilqr, m) {
   py::class_<LateralLongitudinalMotion>(m, "LateralLongitudinalMotion")
       .def(py::init<>())
       .def("init",
-             py::overload_cast<const std::string&, const PlanningPoint&, bool>(&LateralLongitudinalMotion::init),
-             "Init function with enable_dodge",
-             py::arg("file_path"), py::arg("planning_point"), py::arg("enable_dodge"))
+           py::overload_cast<const std::string &, const PlanningPoint &, bool>(
+               &LateralLongitudinalMotion::init),
+           "Init function with enable_dodge", py::arg("file_path"),
+           py::arg("planning_point"), py::arg("enable_dodge"))
       .def("init",
-             py::overload_cast<const std::string&, const PlanningPoint&>(&LateralLongitudinalMotion::init),
-             "Init function without enable_dodge",
-             py::arg("file_path"), py::arg("planning_point"))
+           py::overload_cast<const std::string &, const PlanningPoint &>(
+               &LateralLongitudinalMotion::init),
+           "Init function without enable_dodge", py::arg("file_path"),
+           py::arg("planning_point"))
       .def("get_env", &LateralLongitudinalMotion::get_env)
       .def("get_planning_origin",
            &LateralLongitudinalMotion::get_planning_origin)

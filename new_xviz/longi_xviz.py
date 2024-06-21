@@ -31,7 +31,8 @@ class PlotXpilotViz(XvizPlotBase):
         nop_count_figure_viz = FigureViz('Nop_Counter', 'Index', 'Data', y_range=None, 
                                          width=600 ,height = 200)
         self.add_layer_to_figure(nop_count_figure_viz, args=dict(data_key='nop_counter', \
-                                                                plot_type='single_point'))
+                                                                plot_type='single_point', \
+                                                                    line_alpha=1, line_width=1))
         self.figs_['nop_count'] = nop_count_figure_viz.plot()
         callback_nop_count = nop_count_figure_viz.get_callback_list()
         
@@ -39,7 +40,8 @@ class PlotXpilotViz(XvizPlotBase):
         traj_update_figure_viz = FigureViz('Traj_Update', 'Index', 'Data', y_range=None, 
                                            width=600 ,height = 200)
         self.add_layer_to_figure(traj_update_figure_viz, args=dict(data_key='updatedByVehicleStatus', \
-                                                                plot_type='single_point'))
+                                                                plot_type='single_point', \
+                                                                    line_alpha=1, line_width=1))
         self.figs_['traj_update'] = traj_update_figure_viz.plot()
         callback_traj_update = traj_update_figure_viz.get_callback_list()
         

@@ -45,26 +45,26 @@ int main(int argc, char* argv[]) {
   point_init.theta = -0.1;
   point_init.velocity = 15.0;
   point_init.acceleration = 0.6;
-// case 3
+  // case 3
   point_init.position.x = 30;
   point_init.position.y = 5.8;
   point_init.theta = 0.0;
   point_init.velocity = 14.22;
-  point_init.acceleration  = 0.0;
+  point_init.acceleration = 0.0;
 
   // case 2
   point_init.position.x = 10.0;
   point_init.position.y = 6.0;
   point_init.theta = 0.2;
   point_init.velocity = 5.67;
-  point_init.acceleration  = 0.5;
+  point_init.acceleration = 0.5;
 
   // dodge 1
   point_init.position.x = 10.0;
   point_init.position.y = 4.0;
   point_init.theta = -0.1;
   point_init.velocity = 15.0;
-  point_init.acceleration  = 0.6;
+  point_init.acceleration = 0.6;
 
   if (argc < 2) {
     std::cout << "please input simulator case path" << std::endl;

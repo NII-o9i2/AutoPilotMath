@@ -9,6 +9,28 @@
 #include <vector>
 #include <cmath>
 namespace ILQR {
+class SolverInfoLog;
+struct IDMLongiProfile {
+  double s = 0.0;
+  double v = 0.0;
+  double a = 0.0;
+};
+
+struct IDMCarInfo {
+  double car_s;
+  double car_v;
+  double car_a;
+  double car_length;
+
+  IDMCarInfo() = default;
+  explicit IDMCarInfo(const double &_car_s,
+                      const double &_car_v,
+                      const double &_car_a,
+                      const double &_car_length)
+      : car_s(_car_s), car_v(_car_v), car_a(_car_a), car_length(_car_length){};
+
+  void print_car_info() const;
+};
 
 struct IDMParam {
   double delta = 3.0;
@@ -33,10 +55,24 @@ struct IDMParam {
 
 class LongitudinalOperator {
  public:
+  static IDMLongiProfile calc_longi_profile(const ILQR::IDMParam &idm_params,
+                                            const IDMCarInfo &ego_state,
+                                            const IDMCarInfo &obs_state,
+                                            const double &delta_t,
+                                            const int &exist_leader);
+
   static std::pair<double, double> calc_idm_acc(const IDMParam &idm_params,
                                                 double delta_s,
                                                 double curr_v,
                                                 double leader_v,
+                                                int exist_leader);
+
+  // overload func, take desired sped as input param
+  static std::pair<double, double> calc_idm_acc(const IDMParam &idm_params,
+                                                double delta_s,
+                                                double curr_v,
+                                                double leader_v,
+                                                double speed_limit,
                                                 int exist_leader);
 
   static double linear_interpolate(const double &x,
@@ -52,6 +88,6 @@ class LongitudinalOperator {
                          const double curr_v,
                          const double leader_a);
 };
-}
+}  // namespace ILQR
 
 #endif  // BENCH_TEST_ALGORITHM_CILQR_ILQR_LON_CONDITION_H_

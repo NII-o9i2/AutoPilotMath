@@ -3,16 +3,13 @@ project(ilqr_math)
 
 if (ENGINEER_OPTION STREQUAL "ON")
     message(STATUS "************ ILQR ENGINEER MODE ************")
-    set(ENGINEER_SUFFIX "_release")
+    set(ENGINEER_SUFFIX "_release_dd")
     set(PROJECT_NAME_ENGINEER ${PROJECT_NAME})
      
     add_definitions(-DENGINEER_OPTION)
     # Eigen3
     set(EIGEN_ROOT "${PATH_SOURCE_3RDPARTY}/include/eigen3/")
     find_package_sense(ADFramework REQUIRED COMPONENTS ad_log)
-
-    include_directories(${EIGEN_ROOT})
-    message(EIGEN_ROOT ${EIGEN_ROOT})
 
     string(APPEND PROJECT_NAME_ENGINEER "${ENGINEER_SUFFIX}")
     add_library(${PROJECT_NAME_ENGINEER} SHARED
@@ -21,11 +18,12 @@ if (ENGINEER_OPTION STREQUAL "ON")
             ${CMAKE_CURRENT_SOURCE_DIR}/core/ilqr_tree_interface.cpp
     )
     target_link_libraries(${PROJECT_NAME_ENGINEER}
-            math_common
+            math_common_dd
     )
     target_include_directories(${PROJECT_NAME_ENGINEER} PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}
-            ${ADFramework_INCLUDE_DIRS})
+            ${ADFramework_INCLUDE_DIRS}
+            ${EIGEN_ROOT})
             ## Install headers and libs
     install(TARGETS ${PROJECT_NAME_ENGINEER} LIBRARY DESTINATION "lib")
 else()
@@ -44,24 +42,25 @@ else()
             ${CMAKE_CURRENT_SOURCE_DIR}/lateral_longitudinal_ilqr.cpp
     )
     target_link_libraries(${PROJECT_NAME}
-            math_common
+            math_common_dd
             env_simulator
     )
 
     include_directories(${Python_INCLUDE_DIR})
     find_package(pybind11 REQUIRED)
+    find_package(Eigen3 REQUIRED)   
 
     pybind11_add_module(pybind_ilqr
             ${CMAKE_CURRENT_SOURCE_DIR}/ilqr_pybind.cpp)
     target_link_libraries(pybind_ilqr PRIVATE
-            math_common
+            math_common_dd
             ${PROJECT_NAME}
     )
     target_include_directories(${PROJECT_NAME} PUBLIC
-            ${CMAKE_CURRENT_SOURCE_DIR})
+                                ${CMAKE_CURRENT_SOURCE_DIR})
     add_executable(test_ilqr
             ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     )
     # find_package(CGAL REQUIRED)
-    target_link_libraries(test_ilqr math_common ${PROJECT_NAME})
+    target_link_libraries(test_ilqr math_common_dd ${PROJECT_NAME})
 endif ()

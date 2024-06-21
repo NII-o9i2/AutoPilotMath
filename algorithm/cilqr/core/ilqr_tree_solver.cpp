@@ -36,7 +36,7 @@ void VehicleModelBicyclePlus::step(Eigen::VectorXd &state,
   double next_a = state[4] + action[0] * param_.delta_t;
   next_a = std::max(-6.0, next_a);
   next_a = std::min(2.0, next_a);
-//  action[0] = (next_a - state[4]) / param_.delta_t;
+  //  action[0] = (next_a - state[4]) / param_.delta_t;
 
   if (next_v < 0.0) {
     next_v = 0.0;
@@ -45,14 +45,14 @@ void VehicleModelBicyclePlus::step(Eigen::VectorXd &state,
   }
   next_a = std::max(-6.0, next_a);
   next_a = std::min(2.0, next_a);
-//  action[0] = (next_a - state[4]) / param_.delta_t;
+  //  action[0] = (next_a - state[4]) / param_.delta_t;
 
   double max_omega = std::max(1.0, next_v) * param_.curvature_max;
-  max_omega = std::min(max_omega, (param_.acc_lat_max - 0.2) / state[2]);
+  max_omega = std::min(max_omega, (param_.acc_lat_max - 0.2) / std::max(0.000001, state[2]));
   double next_omega = state[5] + action[1] * param_.delta_t;
   next_omega = std::max(-max_omega, next_omega);
   next_omega = std::min(max_omega, next_omega);
-//  action[1] = (next_omega - state[5]) / param_.delta_t;
+  //  action[1] = (next_omega - state[5]) / param_.delta_t;
 
   next_state << next_x, next_y, next_v, next_theta, next_a, next_omega;
 }
@@ -90,7 +90,8 @@ std::vector<double> VehicleModelBicyclePlus::step_std(
 void VehicleModelBicyclePlus::condition_init(
     const int &frame_count,
     const std::shared_ptr<ILQREnvInterface> &env_ptr,
-    ILQR::StepCondition &l_condition) const {
+    ILQR::StepCondition &l_condition,
+    MathUtils::Point2D ego_init_position) const {
   // 1.0 get info from env obstacle mgr
   auto &obs_source = env_ptr->obstacle_mgr_interface_;
   l_condition.obstacle_belief_state_map.clear();
@@ -98,15 +99,21 @@ void VehicleModelBicyclePlus::condition_init(
     SolverInfoLog::Instance()->error(" condition_init nullptr ");
     return;
   }
-
+  auto ego_s_return = env_ptr->get_lane_s(ego_init_position);
+  double ego_s = ego_s_return.first == FuncStatus::FuncSucceed ? ego_s_return.second : 0.0;
   for (auto &ob_item : *obs_source) {
     LonObstacleInfo tmp;
-    if (frame_count >= ob_item.second->trajectory_points.size()) {
+    if (frame_count >= ob_item.second->trajectory_points.size() || ob_item.second->trajectory_points.empty()) {
       // SolverInfoLog::Instance()->error("  condition init obstacle traj
       // oversize ");
       continue;
     }
+    auto s_return = env_ptr->get_lane_s(ob_item.second->trajectory_points.front().position);
     auto &info = ob_item.second->trajectory_points[frame_count];
+    if (s_return.first==FuncStatus::FuncSucceed && info.length < 7.0){
+      tmp.is_behind_car = ego_s + info.length  > s_return.second;
+    }
+    tmp.type = info.type;
     tmp.length = info.length;
     tmp.belief = info.belief;
     tmp.s = info.s;
@@ -114,13 +121,15 @@ void VehicleModelBicyclePlus::condition_init(
     tmp.v = info.v;
     tmp.a = info.a;
     tmp.theta = info.theta;
-    double a_safe = 0.2 + 0.7 * info.length;
+    double a_safe = 0.5 + 0.7 * info.length;
     double r_4 = param_.vehicle_param.r_4;
     tmp.ellipse_a = 0.5 * (tmp.length + r_4 * 2 + a_safe);
     double b_safe = 0.2 + 0.15 * info.width;
     tmp.ellipse_b = 0.5 * (info.width + r_4 * 2 + b_safe);
-    if (tmp.length > 8.0){
-      tmp.ellipse_b += 1.0;
+    if (tmp.length > 8.0) {
+      tmp.ellipse_b += param_.dodge_lat_dis;
+    }else{
+      tmp.ellipse_b += 0.2;
     }
     l_condition.obstacle_belief_state_map.insert(
         std::pair<int, LonObstacleInfo>{ob_item.first, tmp});
@@ -155,6 +164,8 @@ void VehicleModelBicyclePlus::get_l_condition(
     return;
   }
 
+  l_condition.speed_limit = info_res.second.speed_limit;
+  
   // lat condition
   if (param_.enable_lat) {
     auto &info = info_res.second;
@@ -206,90 +217,111 @@ void VehicleModelBicyclePlus::get_l_condition(
     double pre_v_ego = pre_state[2];
     double pre_a_ego = pre_state[4];
     double ref_a = 0.0;
-
-    if (param_.enable_hard_idm_model && pre_l_condition.has_ref_v) {
+    if (param_.use_extern_ref){
       pre_v_ego = pre_l_condition.v_ref;
-    }
-    if (param_.enable_hard_idm_model && pre_l_condition.has_ref_a) {
-      pre_a_ego = pre_l_condition.a_ref;
-    }
-    double v_ego = std::max(0.0, pre_v_ego + pre_a_ego * param_.delta_t);
-    auto res = ILQR::LongitudinalOperator::calc_idm_acc(param_.idm_param, 0.0,
-                                                        v_ego, 0.0, 0);
-    ref_a = res.first;
-
-    // SolverInfoLog::Instance()->log("no_obs ref_a " + std::to_string(ref_a));
-
-    double obs_follow_a = 0.0;
-    double obs_follow_s = 0.0;
-    bool obs_follow_a_update_flag = false;
-    l_condition.has_lead_one = false;
-
-    for (auto &item : l_condition.obstacle_belief_state_map) {
-      if (item.second.belief < param_.cut_in_belief_thr) {
-        continue;
+      l_condition.s_ego = s_ego;
+      l_condition.pre_s_ego = pre_l_condition.s_ego;
+      l_condition.has_ref_v = true;
+      l_condition.v_ref = l_condition.speed_limit;
+      l_condition.has_ref_a = true;
+      l_condition.a_ref = (l_condition.v_ref - pre_l_condition.v_ref) / param_.delta_t;
+    }else{
+      if (param_.enable_hard_idm_model && pre_l_condition.has_ref_v) {
+        pre_v_ego = pre_l_condition.v_ref;
       }
-      double v_obj = item.second.v.x * std::cos(state[3]) +
-                     item.second.v.y * std::sin(state[3]);
-      double a_obj = item.second.a.x * std::cos(state[3]) +
-                     item.second.a.y * std::sin(state[3]);
-      double delta_s =
-          std::max(1e-3, item.second.s - 0.5 * item.second.length -
-                             0.5 * param_.vehicle_param.length - s_ego);
-      if (!l_condition.has_lead_one ||
-          item.second.s - 0.5 * item.second.length < obs_follow_s) {
-        obs_follow_s = item.second.s - 0.5 * item.second.length;
-        l_condition.has_lead_one = true;
+      if (param_.enable_hard_idm_model && pre_l_condition.has_ref_a) {
+        pre_a_ego = pre_l_condition.a_ref;
       }
-      if (!obs_follow_a_update_flag) {
-        auto res = ILQR::LongitudinalOperator::calc_idm_acc(
-            param_.idm_param, delta_s, v_ego, v_obj, 1);
-        obs_follow_a = res.first;
-        obs_follow_a_update_flag = true;
-      } else {
-        auto res = ILQR::LongitudinalOperator::calc_idm_acc(
-            param_.idm_param, delta_s, v_ego, v_obj, 1);
-        obs_follow_a = std::min(obs_follow_a, res.first);
+      double v_ego = std::max(0.0, pre_v_ego + pre_a_ego * param_.delta_t);
+      auto res = ILQR::LongitudinalOperator::calc_idm_acc(param_.idm_param, 0.0,
+                                                          v_ego, 0.0, l_condition.speed_limit, 0.0);
+      ref_a = res.first;
+
+      // SolverInfoLog::Instance()->log("no_obs ref_a " + std::to_string(ref_a));
+
+      double obs_follow_a = 0.0;
+      double obs_follow_s = 0.0;
+      bool obs_follow_a_update_flag = false;
+      l_condition.has_lead_one = false;
+
+      for (auto &item : l_condition.obstacle_belief_state_map) {
+        if (item.second.belief < param_.cut_in_belief_thr) {
+          continue;
+        }
+        double v_obj = item.second.v.x * std::cos(state[3]) +
+            item.second.v.y * std::sin(state[3]);
+        double a_obj = item.second.a.x * std::cos(state[3]) +
+            item.second.a.y * std::sin(state[3]);
+        if (v_obj < 13.888888889){
+          l_condition.speed_limit = std::min(l_condition.speed_limit,v_ego + 5.56);
+        }
+        double delta_s =
+            std::max(1e-3, item.second.s - 0.5 * item.second.length -
+                0.5 * param_.vehicle_param.length - s_ego);
+        if (item.second.type == StopLine){
+          delta_s =
+              std::max(1e-3, item.second.s - 1.0 - 0.5 * param_.vehicle_param.length - s_ego);
+        }
+        if (!l_condition.has_lead_one ||
+            item.second.s - 0.5 * item.second.length < obs_follow_s) {
+          if (item.second.type == StopLine){
+            obs_follow_s = item.second.s - 1.0;
+          }else{
+            obs_follow_s = item.second.s - 0.5 * item.second.length;
+          }
+          l_condition.has_lead_one = true;
+        }
+        if (!obs_follow_a_update_flag) {
+          auto res = ILQR::LongitudinalOperator::calc_idm_acc(
+              param_.idm_param, delta_s, v_ego, v_obj, l_condition.speed_limit, 1);
+          obs_follow_a = res.first;
+          obs_follow_a_update_flag = true;
+        } else {
+          auto res = ILQR::LongitudinalOperator::calc_idm_acc(
+              param_.idm_param, delta_s, v_ego, v_obj, l_condition.speed_limit, 1);
+          obs_follow_a = std::min(obs_follow_a, res.first);
+        }
+
+        // SolverInfoLog::Instance()->log(
+        //     "obs_id " + std::to_string(item.first) + " pos x " +
+        //     std::to_string(item.second.position.x) + " pos y " +
+        //     std::to_string(item.second.position.y));
+        // SolverInfoLog::Instance()->log(
+        //     "frame is: " + std::to_string(frame_count) + "obs_follow_s " +
+        //     std::to_string(obs_follow_s) + ",s_ego is:" + std::to_string(s_ego)
+        //     +
+        //     " delta_s " + std::to_string(delta_s) + " v_ego " +
+        //     std::to_string(v_ego) + " v_obj " + std::to_string(v_obj) +
+        //     " idm_acc " +
+        //     std::to_string(ILQR::LongitudinalOperator::calc_idm_acc(
+        //                        param_.idm_param, delta_s, v_ego, v_obj, 1)
+        //                        .first) +
+        //     " obs_follow_a " + std::to_string(obs_follow_a));
+      }
+      if (obs_follow_a_update_flag) {
+        ref_a = std::min(obs_follow_a, ref_a);
+      }
+      if (l_condition.has_lead_one) {
+        l_condition.min_s = obs_follow_s;
       }
 
-      // SolverInfoLog::Instance()->log(
-      //     "obs_id " + std::to_string(item.first) + " pos x " +
-      //     std::to_string(item.second.position.x) + " pos y " +
-      //     std::to_string(item.second.position.y));
-      // SolverInfoLog::Instance()->log(
-      //     "frame is: " + std::to_string(frame_count) + "obs_follow_s " +
-      //     std::to_string(obs_follow_s) + ",s_ego is:" + std::to_string(s_ego) +
-      //     " delta_s " + std::to_string(delta_s) + " v_ego " +
-      //     std::to_string(v_ego) + " v_obj " + std::to_string(v_obj) +
-      //     " idm_acc " +
-      //     std::to_string(ILQR::LongitudinalOperator::calc_idm_acc(
-      //                        param_.idm_param, delta_s, v_ego, v_obj, 1)
-      //                        .first) +
-      //     " obs_follow_a " + std::to_string(obs_follow_a));
+      double curvature = info_res.second.curvature;
+      double min_curvature_speed_limit =
+          std::sqrt((param_.lat_acc_lon) / std::fabs(curvature));
+      double ref_v_curvature =
+          std::fabs(curvature) < 1e-3 ? v_ego : min_curvature_speed_limit;
+      if (ref_v_curvature < v_ego) {
+        v_ego = std::max(0.0, pre_v_ego - std::min(pre_v_ego - ref_v_curvature,
+                                                   0.8 * param_.delta_t));
+        ref_a = (v_ego - pre_v_ego) / param_.delta_t;
+      }
+      l_condition.s_ego = s_ego;
+      l_condition.pre_s_ego = pre_l_condition.s_ego;
+      l_condition.has_ref_a = true;
+      l_condition.a_ref = ref_a;
+      l_condition.has_ref_v = true;
+      l_condition.v_ref = v_ego;
     }
-    if (obs_follow_a_update_flag) {
-      ref_a = std::min(obs_follow_a, ref_a);
-    }
-    if (l_condition.has_lead_one) {
-      l_condition.min_s = obs_follow_s;
-    }
-
-    double curvature = info_res.second.curvature;
-    double min_curvature_speed_limit =
-        std::sqrt((param_.lat_acc_lon) / std::fabs(curvature));
-    double ref_v_curvature =
-        std::fabs(curvature) < 1e-3 ? v_ego : min_curvature_speed_limit;
-    if (ref_v_curvature < v_ego) {
-      v_ego = std::max(0.0, pre_v_ego - std::min(pre_v_ego - ref_v_curvature,
-                                                 0.8 * param_.delta_t));
-      ref_a = (v_ego - pre_v_ego) / param_.delta_t;
-    }
-    l_condition.s_ego = s_ego;
-    l_condition.pre_s_ego = pre_l_condition.s_ego;
-    l_condition.has_ref_a = true;
-    l_condition.a_ref = ref_a;
-    l_condition.has_ref_v = true;
-    l_condition.v_ref = v_ego;
   }
 
   // 8.0 dodge info
@@ -309,6 +341,9 @@ void VehicleModelBicyclePlus::get_l_condition(
     for (auto &item : l_condition.obstacle_belief_state_map) {
       if (item.second.belief > param_.cut_in_belief_thr) {
         // longitudinal handle
+        continue;
+      }
+      if (item.second.is_behind_car){
         continue;
       }
       double x0 = item.second.position.x;
@@ -569,14 +604,16 @@ void VehicleModelBicyclePlus::get_all_element(
         std::sin(state[3] - space_ptr->l_condition.ref_point_theta);
 
     double ref_dis_max = 1.0;
-    if (MathUtils::interpolate<double, double>(std::fabs(space_ptr->l_condition.ref_lat_dis), ref_dis_max,
-                                               param_.w_ref_dis_std_list,
-                                               param_.w_ref_dis_max_list)) {
+    if (MathUtils::interpolate<double, double>(
+            std::fabs(space_ptr->l_condition.ref_lat_dis), ref_dis_max,
+            param_.w_ref_dis_std_list, param_.w_ref_dis_max_list)) {
     } else {
       ref_dis_max = 1.0;
     }
 
-    double tmp = std::max(-ref_dis_max , std::min(ref_dis_max, space_ptr->l_condition.ref_lat_dis + dis * sin_theta_de_alpha));
+    double tmp = std::max(
+        -ref_dis_max, std::min(ref_dis_max, space_ptr->l_condition.ref_lat_dis +
+                                                dis * sin_theta_de_alpha));
 
     double w_ref_line = 0.0;
     if (MathUtils::interpolate<double, double>(state[2], w_ref_line,
@@ -598,17 +635,16 @@ void VehicleModelBicyclePlus::get_all_element(
 
   // 15.0 ref omega
   // 15.1 get_l_x
-  if (param_.enable_lat && space_ptr->l_condition.has_ref_omega) {
-    space_ptr->l_x_space[5] += 2.0 * param_.w_ref_omega *
-                               (state[5] - space_ptr->l_condition.ref_omega);
+  if (param_.enable_lat && space_ptr->l_condition.has_ref_omega ) {
+    space_ptr->l_x_space[5] += 2.0 * param_.w_ref_omega * (state[5] - space_ptr->l_condition.ref_omega);
+    // 15.2 get_l_u
+    // 15.3 get_l_xx
+    if (param_.enable_lat && space_ptr->l_condition.has_ref_omega) {
+      space_ptr->l_xx_space(5, 5) += param_.w_ref_omega * 2.0;  // omega,omega
+    }
+    // 15.4 get_l_ux
+    // 15.5 get_l_uu
   }
-  // 15.2 get_l_u
-  // 15.3 get_l_xx
-  if (param_.enable_lat && space_ptr->l_condition.has_ref_omega) {
-    space_ptr->l_xx_space(5, 5) += param_.w_ref_omega * 2.0;  // omega,omega
-  }
-  // 15.4 get_l_ux
-  // 15.5 get_l_uu
 
   // 16.0 constraint lat acc
   if (param_.enable_lat && space_ptr->l_condition.has_constraint_acc_lat) {
@@ -1045,22 +1081,27 @@ void VehicleModelBicyclePlus::get_all_element(
   // 21.0 ref omega_dot
   if (param_.enable_lat) {
     double l_x_consider = param_.consider_omega_dot_thr - param_.omega_dot_thr;
-    double l_g_consider = -1.0 / param_.omega_dot_constraint_param.t *
-        std::log(-l_x_consider);
+    double l_g_consider =
+        -1.0 / param_.omega_dot_constraint_param.t * std::log(-l_x_consider);
     double g_omega_dot = action[1] * action[1] - param_.omega_dot_thr;
-    if (g_omega_dot > 0){
-      double exp_g = std::exp(param_.omega_dot_constraint_exp_param.q2 * g_omega_dot);
-      double exp_g_dot_u1 = param_.omega_dot_constraint_exp_param.q2 * exp_g  * 2.0 * space_ptr->u_space[1];
+    if (g_omega_dot > 0) {
+      double exp_g =
+          std::exp(param_.omega_dot_constraint_exp_param.q2 * g_omega_dot);
+      double exp_g_dot_u1 = param_.omega_dot_constraint_exp_param.q2 * exp_g *
+                            2.0 * space_ptr->u_space[1];
       // 21.1 get_l_x
       // 21.2 get_l_u
-      space_ptr->l_u_space[1] += param_.omega_dot_constraint_exp_param.q1 * exp_g_dot_u1;
+      space_ptr->l_u_space[1] +=
+          param_.omega_dot_constraint_exp_param.q1 * exp_g_dot_u1;
       // 21.3 get_l_xx
       // 21.4 get_l_ux
       // 21.5 get_l_uu
-      space_ptr->l_uu_space(1,1) += param_.omega_dot_constraint_exp_param.q1 * param_.omega_dot_constraint_exp_param.q2 * 2.0 *
-          (exp_g_dot_u1 * space_ptr->u_space[1] +  exp_g);
-    }else{
-      double dot_t = - 1.0 / param_.omega_dot_constraint_param.t;
+      space_ptr->l_uu_space(1, 1) +=
+          param_.omega_dot_constraint_exp_param.q1 *
+          param_.omega_dot_constraint_exp_param.q2 * 2.0 *
+          (exp_g_dot_u1 * space_ptr->u_space[1] + exp_g);
+    } else {
+      double dot_t = -1.0 / param_.omega_dot_constraint_param.t;
       double g_dot_u1 = 2.0 * space_ptr->u_space[1];
       double g_dot_u1_u1 = 2.0;
       // 21.1 get_l_x
@@ -1069,10 +1110,11 @@ void VehicleModelBicyclePlus::get_all_element(
       // 21.3 get_l_xx
       // 21.4 get_l_ux
       // 21.5 get_l_uu
-      space_ptr->l_uu_space(1,1) += dot_t * ((g_dot_u1 * ( -1.0/(g_omega_dot * g_omega_dot)) * g_dot_u1)
-          + g_dot_u1_u1 / g_omega_dot);
+      space_ptr->l_uu_space(1, 1) +=
+          dot_t *
+          ((g_dot_u1 * (-1.0 / (g_omega_dot * g_omega_dot)) * g_dot_u1) +
+           g_dot_u1_u1 / g_omega_dot);
     }
-
   }
 }
 
@@ -1260,17 +1302,20 @@ void VehicleModelBicyclePlus::get_l(const Eigen::VectorXd &state,
   // 13.0 constraint omega_dot cost
   if (param_.enable_lat) {
     double l_x_consider = param_.consider_omega_dot_thr - param_.omega_dot_thr;
-    double l_g_consider = -1.0 / param_.omega_dot_constraint_param.t *
-        std::log(-l_x_consider);
+    double l_g_consider =
+        -1.0 / param_.omega_dot_constraint_param.t * std::log(-l_x_consider);
     double g_omega_dot = action[1] * action[1] - param_.omega_dot_thr;
-    l+= g_omega_dot > 0 ? std::min(
-        1e9,
-        param_.omega_dot_constraint_exp_param.q1 * std::exp(param_.omega_dot_constraint_exp_param.q2 * g_omega_dot))
-        + 1e8
-                         : std::min(1e8,
-                                    std::max(0.0,
-                                             -1.0 / param_.omega_dot_constraint_param.t * std::log(-g_omega_dot)
-                                                 - l_g_consider));
+    l += g_omega_dot > 0
+             ? std::min(1e9,
+                        param_.omega_dot_constraint_exp_param.q1 *
+                            std::exp(param_.omega_dot_constraint_exp_param.q2 *
+                                     g_omega_dot)) +
+                   1e8
+             : std::min(
+                   1e8,
+                   std::max(0.0, -1.0 / param_.omega_dot_constraint_param.t *
+                                         std::log(-g_omega_dot) -
+                                     l_g_consider));
   }
 }
 
@@ -1301,6 +1346,969 @@ void VehicleModelBicyclePlus::get_l_f(const Eigen::VectorXd &state,
 
   // 7.0 constraint omega
 }
+
+void VehicleModelBicyclePlusV2::get_l_condition(const int &frame_count,
+                                                const Eigen::VectorXd &pre_state,
+                                                const Eigen::VectorXd &state,
+                                                ILQR::StepCondition &pre_l_condition,
+                                                const std::shared_ptr<ILQREnvInterface> &env_ptr,
+                                                ILQR::StepCondition &l_condition) const {
+  // state : x, y, v, theta, a, omega
+  if (env_ptr == nullptr) {
+    SolverInfoLog::Instance()->error(" get_l_condition nullptr ! ");
+  }
+
+  // SolverInfoLog::Instance()->log("get_l_condition frame_count " +
+  //                                std::to_string(frame_count));
+
+  auto begin = std::chrono::high_resolution_clock::now();
+  InterfaceVehicleInfo pos_info;
+  pos_info.point.x = state[0];
+  pos_info.point.y = state[1];
+  pos_info.theta = state[3];
+  pos_info.default_omega = state[5];
+  MathUtils::Point2D pos;
+  pos.x = state[0];
+  pos.y = state[1];
+  auto info_res = env_ptr->get_pursuit_point_info(pos_info);
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> time = end - begin;
+  search_time += time.count();
+  if (info_res.first == FuncStatus::FuncFailed) {
+    SolverInfoLog::Instance()->error("get_nearest_point_info failed ! ");
+    return;
+  }
+
+  // lat condition
+  if (param_.enable_lat) {
+    auto &info = info_res.second;
+    // 1.0 ref point
+    // 2.0 ref omega
+    l_condition.has_ref_omega = true;
+    l_condition.pursuit_omega = info.omega;
+    // 3.0 ref acc_lat
+    l_condition.has_ref_acc_lat = false;
+    l_condition.acc_lat_ref = 0.0;
+  } else {
+    l_condition.has_ref_point = false;
+    l_condition.has_ref_omega = false;
+  }
+
+  // 4.0 constraint acc_lat
+  l_condition.has_constraint_acc_lat = true;
+
+  // 5.0 constraint omega
+  l_condition.has_constraint_omega = false;
+
+  // lon condition
+  // 6.0 ref v
+  // 7.0 ref a
+  if (frame_count == 0) {
+    l_condition.v_ref = state[2];
+    l_condition.a_ref = state[4];
+    l_condition.has_ref_v = false;
+    l_condition.has_ref_a = false;
+    l_condition.has_lead_one = false;
+  } else {
+    double pre_v_ego = pre_state[2];
+    double pre_a_ego = pre_state[4];
+    double ref_a = 0.0;
+
+    if (param_.enable_hard_idm_model && pre_l_condition.has_ref_v) {
+      pre_v_ego = pre_l_condition.v_ref;
+    }
+    if (param_.enable_hard_idm_model && pre_l_condition.has_ref_a) {
+      pre_a_ego = pre_l_condition.a_ref;
+    }
+    double v_ego = std::max(0.0, pre_v_ego + pre_a_ego * param_.delta_t);
+    auto idm_param = param_.idm_param;
+    idm_param.desired_spd = info_res.second.speed_limit;
+    auto res = ILQR::LongitudinalOperator::calc_idm_acc(idm_param, 0.0,
+                                                        v_ego, 0.0, 0);
+    ref_a = res.first;
+
+    // SolverInfoLog::Instance()->log("no_obs ref_a " + std::to_string(ref_a));
+
+
+    double min_curvature_speed_limit =
+      (param_.lat_acc_lon) / std::fabs(info_res.second.omega);
+    double ref_v_curvature =
+        std::fabs(info_res.second.omega) < 1e-3 ? v_ego : min_curvature_speed_limit;
+    if (ref_v_curvature < v_ego) {
+      v_ego = std::max(0.0, pre_v_ego - std::min(pre_v_ego - ref_v_curvature,
+                                                 0.8 * param_.delta_t));
+      ref_a = (v_ego - pre_v_ego) / param_.delta_t;
+    }
+    l_condition.pre_s_ego = pre_l_condition.s_ego;
+    l_condition.has_ref_a = true;
+    l_condition.a_ref = ref_a;
+    l_condition.has_ref_v = true;
+    l_condition.v_ref = v_ego;
+  }
+
+  // 8.0 dodge info
+}
+
+void VehicleModelBicyclePlusV2::condition_init(const int &frame_count,
+                                               const std::shared_ptr<ILQREnvInterface> &env_ptr,
+                                               ILQR::StepCondition &l_condition,
+                                               MathUtils::Point2D ego_init_position) const {
+
+  // 1.0 V2 remove obstacle interface
+
+}
+
+void VehicleModelBicyclePlusV2::get_l(const Eigen::VectorXd &state,
+                                      const Eigen::VectorXd &action,
+                                      const ILQR::StepCondition &condition,
+                                      int frame_count,
+                                      double &l,
+                                      double &l_lat,
+                                      double &l_lon) const {
+  l = 0.0;
+  double last_l = 0;
+  l_lon = 0.0;
+  l_lat = 0.0;
+
+  // 1.0 ref jerk
+  l += param_.w_ref_jerk * (action[0] * action[0]);
+  l += param_.jerk_param.q1 *
+      std::exp(param_.jerk_param.q2 * (action[0] - param_.jerk_thr));
+  l += param_.jerk_param.q1 *
+      std::exp(param_.jerk_param.q2 * (param_.jerk_thr - action[0]));
+  l_lon += l;
+
+  // 2.0 ref omega_dot
+  last_l = l;
+  if (param_.enable_lat) {
+    l += param_.w_ref_omega_dot * (action[1] * action[1]);
+    l_lat += l - last_l;
+  }
+
+  // 3.0 ref v
+  last_l = l;
+  if (condition.has_ref_v) {
+    double delta_v = state[2] - condition.v_ref;
+    l += param_.w_ref_v * (delta_v * delta_v);
+    l_lon += l - last_l;
+  }
+
+  // 4.0 ref a
+  last_l = l;
+  if (condition.has_ref_a) {
+    double delta_acc = state[4] - condition.a_ref;
+    l += param_.w_ref_a * (delta_acc * delta_acc);
+    l_lon += l - last_l;
+  }
+
+  // 5.0 constraint v
+  last_l = l;
+  if (condition.has_lead_one) {
+    double g = state[2] * param_.delta_t + condition.pre_s_ego -
+        condition.min_s + param_.s_constraint_min +
+        0.5 * param_.vehicle_param.length;
+    if (g > 0.0) {
+      l += std::min(1e9, param_.s_constraint_exp_param.q1 *
+          std::exp(param_.s_constraint_exp_param.q2 * g)) +
+          1e8;
+    } else if (g > -1) {
+      l += std::min(1e8, -std::log(-g) / param_.s_constraint_param.t);
+    }
+    l_lon += l - last_l;
+
+    // SolverInfoLog::Instance()->log(
+    //     "constraint v, g " + std::to_string(g) + " pre_s_ego " +
+    //     std::to_string(condition.pre_s_ego) + " vel " +
+    //     std::to_string(state[2]) + " min_s " +
+    //     std::to_string(condition.min_s) +
+    //     " cost " + std::to_string(l - last_l));
+  }
+
+  // 6.0 constraint a
+  //  {
+  //    double g = state[4] - param_.a_constraint_max;
+  //    if (g > 0.0){
+  //      l += param_.a_max_constraint_exp_param.q1 *
+  //      std::min(1e8,std::exp(param_.a_max_constraint_exp_param.q2 * g)) +
+  //      1e6;
+  //    }else if (g > - 1) {
+  //      l += std::min(1e6, -std::log(-g) / param_.a_max_constraint_param.t);
+  //    }
+  //  }
+
+  last_l = l;
+  if (param_.enable_lat) {
+    // 7.0 ref point lat
+
+    // 8.0 ref omega lat
+    if (condition.has_ref_omega) {
+      double delta_omega = state[5] - condition.ref_omega;
+      l += param_.w_ref_omega * (delta_omega * delta_omega);
+    }
+  }
+
+  // 10.0 constraint acc_lat
+  last_l = l;
+  if (condition.has_constraint_acc_lat) {
+    double acc_lat = state[2] * state[5];
+    double g = acc_lat - param_.acc_lat_max;
+    if (g > 0) {
+      l += std::min(1e9,
+                    param_.lat_acc_constraint_exp_param.q1 *
+                        std::exp(param_.lat_acc_constraint_exp_param.q2 * g)) +
+          1e8;
+    } else if (g > -1) {
+      l += std::min(1e8, -std::log(-g) / param_.lat_acc_constraint_param.t);
+    }
+    g = -param_.acc_lat_max - acc_lat;
+    if (g > 0) {
+      l += std::min(1e9,
+                    param_.lat_acc_constraint_exp_param.q1 *
+                        std::exp(param_.lat_acc_constraint_exp_param.q2 * g)) +
+          1e8;
+    } else if (g > -1) {
+      l += std::min(1e8, -std::log(-g) / param_.lat_acc_constraint_param.t);
+    }
+    l_lat += l - last_l;
+  }
+
+  // 11.0 constraint omega
+
+  // 12.0 dodge pose
+  if (param_.enable_dodge) {
+    double l_g_consider = -1.0 / param_.dodge_pose_constraint_param.t *
+        std::log(-param_.consider_g_thr);
+    for (auto &item : condition.obstacle_belief_state_map) {
+      if (item.second.belief > param_.cut_in_belief_thr) {
+        // longitudinal handle
+        continue;
+      }
+
+      for (auto &g : item.second.dodge_g) {
+        l += g > 0.0
+             ? std::min(
+                1e9,
+                param_.dodge_pose_constraint_exp_param.q1 *
+                    std::exp(param_.dodge_pose_constraint_exp_param.q2 *
+                        g)) +
+                1e8
+             : std::min(
+                std::max(0.0,
+                         -1.0 / param_.dodge_pose_constraint_param.t *
+                             std::log(-g) -
+                             l_g_consider),
+                1e8);
+      }
+    }
+  }
+
+  // 13.0 constraint omega_dot cost
+  if (param_.enable_lat) {
+    double l_x_consider = param_.consider_omega_dot_thr - param_.omega_dot_thr;
+    double l_g_consider =
+        -1.0 / param_.omega_dot_constraint_param.t * std::log(-l_x_consider);
+    double g_omega_dot = action[1] * action[1] - param_.omega_dot_thr;
+    l += g_omega_dot > 0
+         ? std::min(1e9,
+                    param_.omega_dot_constraint_exp_param.q1 *
+                        std::exp(param_.omega_dot_constraint_exp_param.q2 *
+                            g_omega_dot)) +
+            1e8
+         : std::min(
+            1e8,
+            std::max(0.0, -1.0 / param_.omega_dot_constraint_param.t *
+                std::log(-g_omega_dot) -
+                l_g_consider));
+  }
+}
+
+void VehicleModelBicyclePlusV2::get_all_element(const int &frame_count,
+                     const std::shared_ptr<ILQREnvInterface> &env_ptr,
+                     const std::shared_ptr<ILQR::SolverSpace> &pre_space_ptr,
+                     std::shared_ptr<ILQR::SolverSpace> &space_ptr) const{
+  auto &state = space_ptr->x_space;
+  auto &action = space_ptr->u_space;
+  // state -> 0:x, 1:y, 2:v, 3:theta, 4:a, 5:omega
+  // action -> 0:jerk, 1:omega_dot
+  double l = state[2] * param_.delta_t +
+      0.5 * state[4] * param_.delta_t * param_.delta_t;
+  double theta_add_omega_dot_t = state[3] + state[5] * param_.delta_t;
+  double middle_sin =
+      0.5 * (std::sin(state[3]) + std::sin(theta_add_omega_dot_t));
+  double middle_cos =
+      0.5 * (std::cos(state[3]) + std::cos(theta_add_omega_dot_t));
+  // 1.0 get_f_x
+  space_ptr->f_x_space.resize(param_.state_size, param_.state_size);
+  space_ptr->f_x_space << 1.0, 0.0, param_.delta_t * middle_cos,
+      -middle_sin * l, middle_cos * 0.5 * param_.delta_t * param_.delta_t,
+      l * 0.5 * param_.delta_t * (-std::sin(theta_add_omega_dot_t)), 0.0, 1.0,
+      param_.delta_t * middle_sin, middle_cos * l,
+      middle_sin * 0.5 * param_.delta_t * param_.delta_t,
+      l * 0.5 * param_.delta_t * std::cos(theta_add_omega_dot_t), 0.0, 0.0, 1.0,
+      0.0, param_.delta_t, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, param_.delta_t, 0.0,
+      0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0;
+
+  // 2.0 get_f_xx
+  space_ptr->f_xx_space.resize(param_.state_size, param_.state_size);
+  if (param_.use_hessians) {
+    space_ptr->f_xx_space.setZero();
+  } else {
+    space_ptr->f_xx_space.setZero();
+  }
+
+  // 3.0 get_f_u
+  space_ptr->f_u_space.resize(param_.state_size, param_.action_size);
+  space_ptr->f_u_space << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      param_.delta_t, 0.0, 0.0, param_.delta_t;
+
+  // 4.0 get_f_ux
+  space_ptr->f_ux_space.resize(param_.action_size, param_.state_size);
+  if (param_.use_hessians) {
+    space_ptr->f_ux_space.setZero();
+  } else {
+    space_ptr->f_ux_space.setZero();
+  }
+
+  // 5.0 get_f_uu
+  space_ptr->f_uu_space.resize(param_.action_size, param_.state_size);
+  if (param_.use_hessians) {
+    space_ptr->f_uu_space.setZero();
+  } else {
+    space_ptr->f_uu_space.setZero();
+  }
+
+  // 6.0 get l_condition
+  if (env_ptr == nullptr) {
+    SolverInfoLog::Instance()->error(" get_all_element nullptr ! ");
+    return;
+  }
+  // 6.1 get condition
+
+  // 6.2 get lon condition
+  if (pre_space_ptr != nullptr) {
+    auto &pre_state = pre_space_ptr->x_space;
+    auto &pre_condition = pre_space_ptr->l_condition;
+    get_l_condition(frame_count, pre_state, space_ptr->x_space, pre_condition,
+                    env_ptr, space_ptr->l_condition);
+  } else {
+    get_l_condition(frame_count, space_ptr->x_space, space_ptr->x_space,
+                    space_ptr->l_condition, env_ptr, space_ptr->l_condition);
+  }
+
+  // 7.0 get l
+  space_ptr->l_space = 0.0;
+  get_l(space_ptr->x_space, space_ptr->u_space, space_ptr->l_condition,
+        frame_count, space_ptr->l_space, space_ptr->l_lat_space,
+        space_ptr->l_lon_space);
+
+  double acc_lat_real = state[2] * state[5];
+  space_ptr->l_x_space.setZero();
+  space_ptr->l_u_space.setZero();
+  space_ptr->l_xx_space.setZero();
+  space_ptr->l_ux_space.setZero();
+  space_ptr->l_uu_space.setZero();
+
+  // SolverInfoLog::Instance()->log("get_l_derivative frame_count " +
+  //                                std::to_string(frame_count));
+
+  // 8.0 ref jerk
+  double exp_pos_jerk =
+      std::exp(param_.jerk_param.q2 * (action[0] - param_.jerk_thr));
+  double exp_neg_jerk =
+      std::exp(param_.jerk_param.q2 * (param_.jerk_thr - action[0]));
+  // 8.1 get_l_x
+  // 8.2 get_l_u
+  space_ptr->l_u_space[0] += 2.0 * param_.w_ref_jerk * action[0];
+  space_ptr->l_u_space[0] +=
+      param_.jerk_param.q1 * param_.jerk_param.q2 * exp_pos_jerk;
+  space_ptr->l_u_space[0] +=
+      -param_.jerk_param.q1 * param_.jerk_param.q2 * exp_neg_jerk;
+  // 8.3 get_l_xx
+  // 8.4 get_l_ux
+  // 8.5 get_l_uu
+  space_ptr->l_uu_space(0, 0) += 2.0 * param_.w_ref_jerk;
+  space_ptr->l_uu_space(0, 0) += param_.jerk_param.q1 * param_.jerk_param.q2 *
+      param_.jerk_param.q2 * exp_pos_jerk;
+  space_ptr->l_uu_space(0, 0) += param_.jerk_param.q1 * param_.jerk_param.q2 *
+      param_.jerk_param.q2 * exp_neg_jerk;
+  auto info = SolverInfoLog::Instance();
+
+  // 9.0 ref omega_dot
+  if (param_.enable_lat) {
+    // 9.1 get_l_x
+    // 9.2 get_l_u
+    space_ptr->l_u_space[1] += 2.0 * param_.w_ref_omega_dot * action[1];
+    // 9.3 get_l_xx
+    // 9.4 get_l_ux
+    // 9.5 get_l_uu
+    space_ptr->l_uu_space(1, 1) += 2.0 * param_.w_ref_omega_dot;
+  }
+
+  // 10.0 ref v
+  // 10.1 get_l_x
+  if (space_ptr->l_condition.has_ref_v) {
+    space_ptr->l_x_space[2] +=
+        2.0 * param_.w_ref_v * (state[2] - space_ptr->l_condition.v_ref);
+  }
+  // 10.2 get_l_u
+  // 10.3 get_l_xx
+  if (space_ptr->l_condition.has_ref_v) {
+    space_ptr->l_xx_space(2, 2) += param_.w_ref_v * 2.0;  // v,v
+  }
+  // 10.4 get_l_ux
+  // 10.5 get_l_uu
+
+  // 11.0 ref a
+  // 11.1 get_l_x
+  if (space_ptr->l_condition.has_ref_a) {
+    space_ptr->l_x_space[4] +=
+        2.0 * param_.w_ref_a * (state[4] - space_ptr->l_condition.a_ref);
+  }
+  // 11.2 get_l_u
+  // 11.3 get_l_xx
+  if (space_ptr->l_condition.has_ref_a) {
+    space_ptr->l_xx_space(4, 4) += param_.w_ref_a * 2.0;  // a,a
+  }
+  // 11.4 get_l_ux
+  // 11.5 get_l_uu
+
+  // 12.0 constraint v
+  if (space_ptr->l_condition.has_lead_one) {
+    // 12.1 get_l_x
+    double s_relative = -space_ptr->l_condition.pre_s_ego +
+        space_ptr->l_condition.min_s - param_.s_constraint_min -
+        0.5 * param_.vehicle_param.length;
+    double g = state[2] * param_.delta_t - s_relative;
+    if (g > 0.0) {
+      space_ptr->l_x_space[2] +=
+          param_.s_constraint_exp_param.q1 * param_.s_constraint_exp_param.q2 *
+              param_.delta_t *
+              std::min(1e9, std::exp(param_.s_constraint_exp_param.q2 * g));
+
+      // SolverInfoLog::Instance()->log(
+      //     "constraint v, g " + std::to_string(g) + " l_x_space[2] " +
+      //     std::to_string(
+      //         param_.s_constraint_exp_param.q1 *
+      //         param_.s_constraint_exp_param.q2 * param_.delta_t *
+      //         std::min(1e9, std::exp(param_.s_constraint_exp_param.q2 *
+      //         g))));
+    } else if (g > -1) {
+      space_ptr->l_x_space[2] +=
+          param_.delta_t / (param_.s_constraint_param.t *
+              (s_relative - param_.delta_t * state[2]));
+
+      // SolverInfoLog::Instance()->log(
+      //     "constraint v, g " + std::to_string(g) + " l_x_space[2] " +
+      //     std::to_string(param_.delta_t /
+      //                    (param_.s_constraint_param.t *
+      //                     (s_relative - param_.delta_t * state[2]))));
+    }
+    // 12.2 get_l_u
+    // 12.3 get_l_xx
+    if (g > 0.0) {
+      space_ptr->l_xx_space(2, 2) +=
+          param_.s_constraint_exp_param.q1 * param_.s_constraint_exp_param.q2 *
+              param_.delta_t * param_.s_constraint_exp_param.q2 * param_.delta_t *
+              std::min(1e9, std::exp(param_.s_constraint_exp_param.q2 * g));
+
+      // SolverInfoLog::Instance()->log(
+      //     "constraint v, g " + std::to_string(g) + " l_xx_space(2, 2) " +
+      //     std::to_string(
+      //         param_.s_constraint_exp_param.q1 *
+      //         param_.s_constraint_exp_param.q2 * param_.delta_t *
+      //         param_.s_constraint_exp_param.q2 * param_.delta_t *
+      //         std::min(1e9, std::exp(param_.s_constraint_exp_param.q2 *
+      //         g))));
+    } else if (g > -1) {
+      space_ptr->l_xx_space(2, 2) += param_.delta_t * param_.delta_t /
+          (param_.s_constraint_param.t *
+              (s_relative - param_.delta_t * state[2]) *
+              (s_relative - param_.delta_t * state[2]));
+
+      // SolverInfoLog::Instance()->log(
+      //     "constraint v, g " + std::to_string(g) + " l_xx_space(2, 2) " +
+      //     std::to_string(param_.delta_t * param_.delta_t /
+      //                    (param_.s_constraint_param.t *
+      //                     (s_relative - param_.delta_t * state[2]) *
+      //                     (s_relative - param_.delta_t * state[2]))));
+    }
+    // 12.4 get_l_ux
+    // 12.5 get_l_uu
+  }
+
+  // 13.0 constraint a
+  // 13.1 get_l_x
+  // 13.2 get_l_u
+  // 13.3 get_l_xx
+  // 13.4 get_l_ux
+  // 13.5 get_l_uu
+
+  // 14.0 ref line point
+
+  // 15.0 ref omega
+  // 15.1 get_l_x
+  if (param_.enable_lat && space_ptr->l_condition.has_ref_omega ) {
+    space_ptr->l_x_space[5] += 2.0 * param_.w_ref_omega * (state[5] - space_ptr->l_condition.ref_omega);
+    // 15.2 get_l_u
+    // 15.3 get_l_xx
+    if (param_.enable_lat && space_ptr->l_condition.has_ref_omega) {
+      space_ptr->l_xx_space(5, 5) += param_.w_ref_omega * 2.0;  // omega,omega
+    }
+    // 15.4 get_l_ux
+    // 15.5 get_l_uu
+  }
+
+  // 16.0 constraint lat acc
+  if (param_.enable_lat && space_ptr->l_condition.has_constraint_acc_lat) {
+    double acc_lat = state[2] * state[5];
+    double g = acc_lat - param_.acc_lat_max;
+    double exp =
+        std::min(1e9, std::exp(param_.lat_acc_constraint_exp_param.q2 * g));
+    // 16.1 get_l_x
+    if (g > 0) {
+      space_ptr->l_x_space[5] += param_.lat_acc_constraint_exp_param.q1 *
+          param_.lat_acc_constraint_exp_param.q2 *
+          state[2] * exp;
+    } else {
+      space_ptr->l_x_space[5] +=
+          -state[2] / (param_.lat_acc_constraint_param.t * g);
+    }
+    g = -acc_lat - param_.acc_lat_max;
+    double exp_min =
+        std::min(1e9, std::exp(param_.lat_acc_constraint_exp_param.q2 * g));
+    if (g > 0) {
+      space_ptr->l_x_space[5] += -param_.lat_acc_constraint_exp_param.q1 *
+          param_.lat_acc_constraint_exp_param.q2 *
+          state[2] * exp_min;
+    } else {
+      space_ptr->l_x_space[5] +=
+          state[2] / (param_.lat_acc_constraint_param.t * g);
+    }
+    // 16.2 get_l_u
+    // 16.3 get_l_xx
+    g = acc_lat - param_.acc_lat_max;
+    if (g > 0) {
+      space_ptr->l_xx_space(5, 5) +=
+          param_.lat_acc_constraint_exp_param.q1 *
+              param_.lat_acc_constraint_exp_param.q2 * state[2] *
+              param_.lat_acc_constraint_exp_param.q2 * state[2] * exp;
+    } else {
+      space_ptr->l_xx_space(5, 5) +=
+          state[2] * state[2] / (param_.lat_acc_constraint_param.t * g * g);
+    }
+    g = -acc_lat - param_.acc_lat_max;
+    if (g > 0) {
+      space_ptr->l_xx_space(5, 5) +=
+          param_.lat_acc_constraint_exp_param.q1 *
+              param_.lat_acc_constraint_exp_param.q2 * state[2] *
+              param_.lat_acc_constraint_exp_param.q2 * state[2] * exp_min;
+    } else {
+      space_ptr->l_xx_space(5, 5) +=
+          state[2] * state[2] / (param_.lat_acc_constraint_param.t * g * g);
+    }
+    // 16.4 get_l_ux
+    // 16.5 get_l_uu
+  }
+
+  // 17.0 lat_acc v
+  // todo: miss cost function
+  if (param_.enable_lat) {
+    // 17.1 get_l_x
+    space_ptr->l_x_space[2] +=
+        2 * param_.w_lat_acc_v * state[2] * state[5] * state[5];
+    // 17.2 get_l_u
+    // 17.3 get_l_xx
+    space_ptr->l_xx_space(2, 2) += 2 * param_.w_lat_acc_v * state[5] * state[5];
+    // 17.4 get_l_ux
+    // 17.5 get_l_uu
+  }
+
+  // 18.0 lat_acc omega
+  // if (param_.enable_lat && space_ptr->l_condition.has_ref_acc_lat) {
+  //   // 18.1 get_l_x
+  //   space_ptr->l_x_space[5] +=
+  //       2 * param_.w_ref_acc_lat *
+  //       (state[2] * state[5] - space_ptr->l_condition.acc_lat_ref) *
+  //       state[2];
+  //   // 18.2 get_l_u
+  //   // 18.3 get_l_xx
+  //   space_ptr->l_xx_space(5, 5) +=
+  //       2 * param_.w_ref_acc_lat * state[2] * state[2];
+  //   // 18.4 get_l_ux
+  //   // 18.5 get_l_uu
+  // }
+
+  // 19.0 ref point
+
+  // 20.0 dodge obstacle constraint cost
+  if (param_.enable_dodge) {
+    double l_4 = param_.vehicle_param.length * 0.125;
+    auto &ratio = param_.vehicle_param.r_4_ratio;
+    for (auto &item : space_ptr->l_condition.obstacle_belief_state_map) {
+      if (item.second.belief > param_.cut_in_belief_thr) {
+        // longitudinal handle
+        continue;
+      }
+      for (int index = 0; index < item.second.dodge_g.size(); index++) {
+        double g = item.second.dodge_g[index];
+        double refactor = ratio[index] * l_4;
+        double y_c = space_ptr->l_condition.ego_cycle_centers[index].y;
+        double x_c = space_ptr->l_condition.ego_cycle_centers[index].x;
+        double x0 = item.second.position.x;
+        double y0 = item.second.position.y;
+        double cos_alpha_item = cos(item.second.theta);
+        double sin_alpha_item = sin(item.second.theta);
+        double cos_theta_item = cos(space_ptr->x_space[3]);
+        double sin_theta_item = sin(space_ptr->x_space[3]);
+        double y_cos_item = (y_c - y0) * cos_alpha_item;
+        double x_sin_item = (x_c - x0) * sin_alpha_item;
+        double y_sin_item = (y_c - y0) * sin_alpha_item;
+        double x_cos_item = (x_c - x0) * cos_alpha_item;
+        double ellipse_b_2 =
+            1.0 / (item.second.ellipse_b * item.second.ellipse_b);
+        double ellipse_a_2 =
+            1.0 / (item.second.ellipse_a * item.second.ellipse_a);
+        if (g > 0.0) {
+          // 20.1 get_l_x
+          double exp_g = std::min(
+              1e9, param_.dodge_pose_constraint_exp_param.q1 *
+                  std::exp(g * param_.dodge_pose_constraint_exp_param.q2));
+          double exp_g_dot_x =
+              param_.dodge_pose_constraint_exp_param.q2 *
+                  (-2 * (-y_cos_item + x_sin_item) * sin_alpha_item * ellipse_b_2 -
+                      2 * (y_sin_item + x_cos_item) * cos_alpha_item * ellipse_a_2) *
+                  exp_g;
+          double exp_g_dot_y =
+              param_.dodge_pose_constraint_exp_param.q2 *
+                  (2 * (-y_cos_item + x_sin_item) * cos_alpha_item * ellipse_b_2 -
+                      2 * (y_sin_item + x_cos_item) * sin_alpha_item * ellipse_a_2) *
+                  exp_g;
+          double exp_g_dot_theta =
+              param_.dodge_pose_constraint_exp_param.q2 *
+                  (-(-y_cos_item + x_sin_item) *
+                      (-2 * refactor * sin_alpha_item * sin_theta_item -
+                          2 * refactor * cos_alpha_item * cos_theta_item) *
+                      ellipse_b_2 -
+                      (y_sin_item + x_cos_item) *
+                          (2 * refactor * sin_alpha_item * cos_theta_item -
+                              2 * refactor * sin_theta_item * cos_alpha_item) *
+                          ellipse_a_2) *
+                  exp_g;
+          space_ptr->l_x_space[0] += exp_g_dot_x;
+          space_ptr->l_x_space[1] += exp_g_dot_y;
+          space_ptr->l_x_space[3] += exp_g_dot_theta;
+          // 20.2 get_l_u
+          // 20.3 get_l_xx
+          double exp_g_dot_x_x =
+              param_.dodge_pose_constraint_exp_param.q2 *
+                  param_.dodge_pose_constraint_exp_param.q2 *
+                  std::pow(-2 * (-y_cos_item + x_sin_item) * sin_alpha_item *
+                               ellipse_b_2 -
+                               2 * (y_sin_item + x_cos_item) * cos_alpha_item *
+                                   ellipse_a_2,
+                           2) *
+                  exp_g +
+                  param_.dodge_pose_constraint_exp_param.q2 *
+                      (-2 * sin_alpha_item * sin_alpha_item * ellipse_b_2 -
+                          2 * cos_alpha_item * cos_alpha_item * ellipse_a_2) *
+                      exp_g;
+          double exp_g_dot_x_y =
+              param_.dodge_pose_constraint_exp_param.q2 *
+                  param_.dodge_pose_constraint_exp_param.q2 *
+                  (-2 * (-y_cos_item + x_sin_item) * sin_alpha_item *
+                      ellipse_b_2 -
+                      2 * (y_sin_item + x_cos_item) * cos_alpha_item *
+                          ellipse_a_2) *
+                  (2 * (-y_cos_item + x_sin_item) * cos_alpha_item *
+                      ellipse_b_2 -
+                      2 * (y_sin_item + x_cos_item) * sin_alpha_item *
+                          ellipse_a_2) *
+                  exp_g +
+                  param_.dodge_pose_constraint_exp_param.q2 *
+                      (2 * sin_alpha_item * cos_alpha_item * ellipse_b_2 -
+                          2 * sin_alpha_item * cos_alpha_item * ellipse_a_2) *
+                      exp_g;
+          double exp_g_dot_x_theta =
+              param_.dodge_pose_constraint_exp_param.q2 *
+                  param_.dodge_pose_constraint_exp_param.q2 *
+                  (-(-y_cos_item + x_sin_item) *
+                      (-2 * refactor * sin_alpha_item * sin_theta_item -
+                          2 * refactor * cos_alpha_item * cos_theta_item) *
+                      ellipse_b_2 -
+                      (y_sin_item + x_cos_item) *
+                          (2 * refactor * sin_alpha_item * cos_theta_item -
+                              2 * refactor * sin_theta_item * cos_alpha_item) *
+                          ellipse_a_2) *
+                  (-2 * (-y_cos_item + x_sin_item) * sin_alpha_item *
+                      ellipse_b_2 -
+                      2 * (y_sin_item + x_cos_item) * cos_alpha_item *
+                          ellipse_a_2) *
+                  exp_g +
+                  param_.dodge_pose_constraint_exp_param.q2 *
+                      (-2 * (-refactor * sin_alpha_item * sin_theta_item -
+                          refactor * cos_alpha_item * cos_theta_item) *
+                          sin_alpha_item * ellipse_b_2 -
+                          2 * (refactor * sin_alpha_item * cos_theta_item -
+                              refactor * sin_theta_item * cos_alpha_item) *
+                              cos_alpha_item * ellipse_a_2) *
+                      exp_g;
+          double exp_g_dot_y_x = exp_g_dot_x_y;
+          double exp_g_dot_y_y =
+              param_.dodge_pose_constraint_exp_param.q2 *
+                  param_.dodge_pose_constraint_exp_param.q2 *
+                  std::pow((2 * (-y_cos_item + x_sin_item) * cos_alpha_item *
+                               ellipse_b_2 -
+                               2 * (y_sin_item + x_cos_item) * sin_alpha_item *
+                                   ellipse_a_2),
+                           2) *
+                  exp_g +
+                  param_.dodge_pose_constraint_exp_param.q2 *
+                      (-2 * cos_alpha_item * cos_alpha_item * ellipse_b_2 -
+                          2 * sin_alpha_item * sin_alpha_item * ellipse_a_2) *
+                      exp_g;
+          double exp_g_dot_y_theta =
+              param_.dodge_pose_constraint_exp_param.q2 *
+                  param_.dodge_pose_constraint_exp_param.q2 *
+                  (-(-y_cos_item + x_sin_item) *
+                      (-2 * refactor * sin_alpha_item * sin_theta_item -
+                          2 * refactor * cos_alpha_item * cos_theta_item) *
+                      ellipse_b_2 -
+                      (y_sin_item + x_cos_item) *
+                          (2 * refactor * sin_alpha_item * cos_theta_item -
+                              2 * refactor * sin_theta_item * cos_alpha_item) *
+                          ellipse_a_2) *
+                  (2 * (-y_cos_item + x_sin_item) * cos_alpha_item *
+                      ellipse_b_2 -
+                      2 * (y_sin_item + x_cos_item) * sin_alpha_item *
+                          ellipse_a_2) *
+                  exp_g +
+                  param_.dodge_pose_constraint_exp_param.q2 *
+                      (2 * (-refactor * sin_alpha_item * sin_theta_item -
+                          refactor * cos_alpha_item * cos_theta_item) *
+                          cos_alpha_item * ellipse_b_2 -
+                          2 * (refactor * sin_alpha_item * cos_theta_item -
+                              refactor * sin_theta_item * cos_alpha_item) *
+                              sin_alpha_item * ellipse_a_2) *
+                      exp_g;
+          double exp_g_dot_theta_x = exp_g_dot_x_theta;
+          double exp_g_dot_theta_y = exp_g_dot_y_theta;
+          double exp_g_dot_theta_theta =
+              param_.dodge_pose_constraint_exp_param.q2 *
+                  param_.dodge_pose_constraint_exp_param.q2 *
+                  std::pow(
+                      (-(-y_cos_item + x_sin_item) *
+                          (-2 * refactor * sin_alpha_item * sin_theta_item -
+                              2 * refactor * cos_alpha_item * cos_theta_item) *
+                          ellipse_b_2 -
+                          (y_sin_item + x_cos_item) *
+                              (2 * refactor * sin_alpha_item * cos_theta_item -
+                                  2 * refactor * sin_theta_item * cos_alpha_item) *
+                              ellipse_a_2),
+                      2) *
+                  exp_g +
+                  param_.dodge_pose_constraint_exp_param.q2 *
+                      (-(-y_cos_item + x_sin_item) *
+                          (-2 * refactor * sin_alpha_item * cos_theta_item +
+                              2 * refactor * sin_theta_item * cos_alpha_item) *
+                          ellipse_b_2 -
+                          (-2 * refactor * sin_alpha_item * sin_theta_item -
+                              2 * refactor * cos_alpha_item * cos_theta_item) *
+                              (-refactor * sin_alpha_item * sin_theta_item -
+                                  refactor * cos_alpha_item * cos_theta_item) *
+                              ellipse_b_2 -
+                          (y_sin_item + x_cos_item) *
+                              (-2 * refactor * sin_alpha_item * sin_theta_item -
+                                  2 * refactor * cos_alpha_item * cos_theta_item) *
+                              ellipse_a_2 -
+                          (refactor * sin_alpha_item * cos_theta_item -
+                              refactor * sin_theta_item * cos_alpha_item) *
+                              (2 * refactor * sin_alpha_item * cos_theta_item -
+                                  2 * refactor * sin_theta_item * cos_alpha_item) *
+                              ellipse_a_2) *
+                      exp_g;
+          space_ptr->l_xx_space(0, 0) += exp_g_dot_x_x;
+          space_ptr->l_xx_space(0, 1) += exp_g_dot_x_y;
+          space_ptr->l_xx_space(0, 3) += exp_g_dot_x_theta;
+          space_ptr->l_xx_space(1, 0) += exp_g_dot_y_x;
+          space_ptr->l_xx_space(1, 1) += exp_g_dot_y_y;
+          space_ptr->l_xx_space(1, 3) += exp_g_dot_y_theta;
+          space_ptr->l_xx_space(3, 0) += exp_g_dot_theta_x;
+          space_ptr->l_xx_space(3, 1) += exp_g_dot_theta_y;
+          space_ptr->l_xx_space(3, 3) += exp_g_dot_theta_theta;
+          // 20.4 get_l_ux
+          // 20.5 get_l_uu
+        } else if (g > param_.consider_g_thr) {
+          //          std::cout<< " -------------------log-------------" <<
+          //          std::endl;
+          //          std::cout<< " x0 "<< x0 << " y0 " << y0 << " x_c "<<
+          //          space_ptr->x_space[0] << " y_c "<< space_ptr->x_space[1]
+          //          <<std::endl;
+          //          std::cout<< " theta "<< space_ptr->x_space[3] << " alpha "
+          //          << item.second.theta
+          //            << " a "<< item.second.ellipse_a  << " b "<<
+          //            item.second.ellipse_b <<std::endl;
+          //          std::cout<< " refactor " << refactor << std::endl;
+          // 20.1 get_l_x
+          double dot_t_g = 1.0 / (param_.dodge_pose_constraint_param.t * g);
+          double g_dot_x =
+              -2 * (-y_cos_item + x_sin_item) * sin_alpha_item * ellipse_b_2 -
+                  2 * (y_sin_item + x_cos_item) * cos_alpha_item * ellipse_a_2;
+          double log_g_dot_x = -dot_t_g * g_dot_x;
+
+          double g_dot_y =
+              2 * (-y_cos_item + x_sin_item) * cos_alpha_item * ellipse_b_2 -
+                  2 * (y_sin_item + x_cos_item) * sin_alpha_item * ellipse_a_2;
+          double log_g_dot_y = -dot_t_g * g_dot_y;
+
+          double g_dot_theta =
+              -(-y_cos_item + x_sin_item) *
+                  (-2 * refactor * sin_alpha_item * sin_theta_item -
+                      2 * refactor * cos_alpha_item * cos_theta_item) *
+                  ellipse_b_2 -
+                  (y_sin_item + x_cos_item) *
+                      (2 * refactor * sin_alpha_item * cos_theta_item -
+                          2 * refactor * sin_theta_item * cos_alpha_item) *
+                      ellipse_a_2;
+          double log_g_dot_theta = -dot_t_g * g_dot_theta;
+          space_ptr->l_x_space[0] += log_g_dot_x;
+          space_ptr->l_x_space[1] += log_g_dot_y;
+          space_ptr->l_x_space[3] += log_g_dot_theta;
+          //          std::cout << " log_g_dot_x " << log_g_dot_x << "
+          //          log_g_dot_y "<< log_g_dot_y<< " log_g_dot_theta " <<
+          //          log_g_dot_theta << std::endl;
+
+          // 20.2 get_l_u
+          // 20.3 get_l_xx
+          double dot_t_g_g = dot_t_g / g;
+          double g_dot_x_x =
+              -2 * sin_alpha_item * sin_alpha_item * ellipse_b_2 -
+                  2 * cos_alpha_item * cos_alpha_item * ellipse_a_2;
+          double log_g_dot_x_x =
+              g_dot_x * dot_t_g_g * g_dot_x + -dot_t_g * g_dot_x_x;
+
+          double g_dot_x_y = 2 * sin_alpha_item * cos_alpha_item * ellipse_b_2 -
+              2 * sin_alpha_item * cos_alpha_item * ellipse_a_2;
+          double log_g_dot_x_y =
+              g_dot_x * dot_t_g_g * g_dot_y - dot_t_g * g_dot_x_y;
+
+          double g_dot_x_theta =
+              -2 * (-refactor * sin_alpha_item * sin_theta_item -
+                  refactor * cos_alpha_item * cos_theta_item) *
+                  sin_alpha_item * ellipse_b_2 -
+                  2 * (refactor * sin_alpha_item * cos_theta_item -
+                      refactor * sin_theta_item * cos_alpha_item) *
+                      cos_alpha_item * ellipse_a_2;
+          double log_g_dot_x_theta =
+              g_dot_x * dot_t_g_g * g_dot_theta - dot_t_g * g_dot_x_theta;
+
+          //          std::cout << " log_g_dot_x_x " << log_g_dot_x_x << "
+          //          log_g_dot_x_y " << log_g_dot_x_y << " log_g_dot_x_theta
+          //          "<< log_g_dot_x_theta << std::endl;
+          double log_g_dot_y_x = log_g_dot_x_y;
+
+          double g_dot_y_y =
+              -2 * cos_alpha_item * cos_alpha_item * ellipse_b_2 -
+                  2 * sin_alpha_item * sin_alpha_item * ellipse_a_2;
+          double log_g_dot_y_y =
+              g_dot_y * dot_t_g_g * g_dot_y - dot_t_g * g_dot_y_y;
+
+          double g_dot_y_theta =
+              2 * (-refactor * sin_alpha_item * sin_theta_item -
+                  refactor * cos_alpha_item * cos_theta_item) *
+                  cos_alpha_item * ellipse_b_2 -
+                  2 * (refactor * sin_alpha_item * cos_theta_item -
+                      refactor * sin_theta_item * cos_alpha_item) *
+                      sin_alpha_item * ellipse_a_2;
+          double log_g_dot_y_theta =
+              g_dot_y * dot_t_g_g * g_dot_theta - dot_t_g * g_dot_y_theta;
+          //          std::cout << " log_g_dot_y_x " << log_g_dot_y_x << "
+          //          log_g_dot_y_y " << log_g_dot_y_y << " log_g_dot_y_theta
+          //          "<< log_g_dot_y_theta << std::endl;
+
+          double log_g_dot_theta_x = log_g_dot_x_theta;
+          double log_g_dot_theta_y = log_g_dot_y_theta;
+
+          double g_dot_theta_theta =
+              -(-y_cos_item + x_sin_item) *
+                  (-2 * refactor * sin_alpha_item * cos_theta_item +
+                      2 * refactor * sin_theta_item * cos_alpha_item) *
+                  ellipse_b_2 -
+                  (-2 * refactor * sin_alpha_item * sin_theta_item -
+                      2 * refactor * cos_alpha_item * cos_theta_item) *
+                      (-refactor * sin_alpha_item * sin_theta_item -
+                          refactor * cos_alpha_item * cos_theta_item) *
+                      ellipse_b_2 -
+                  (y_sin_item + x_cos_item) *
+                      (-2 * refactor * sin_alpha_item * sin_theta_item -
+                          2 * refactor * cos_alpha_item * cos_theta_item) *
+                      ellipse_a_2 -
+                  (refactor * sin_alpha_item * cos_theta_item -
+                      refactor * sin_theta_item * cos_alpha_item) *
+                      (2 * refactor * sin_alpha_item * cos_theta_item -
+                          2 * refactor * sin_theta_item * cos_alpha_item) *
+                      ellipse_a_2;
+
+          double log_g_dot_theta_theta = g_dot_theta * dot_t_g_g * g_dot_theta -
+              dot_t_g * g_dot_theta_theta;
+          //          std::cout << " log_g_dot_theta_x " << log_g_dot_theta_x <<
+          //          " log_g_dot_theta_y " << log_g_dot_theta_y << "
+          //          log_g_dot_theta_theta "<< log_g_dot_theta_theta <<
+          //          std::endl;
+          space_ptr->l_xx_space(0, 0) += log_g_dot_x_x;
+          space_ptr->l_xx_space(0, 1) += log_g_dot_x_y;
+          space_ptr->l_xx_space(0, 3) += log_g_dot_x_theta;
+          space_ptr->l_xx_space(1, 0) += log_g_dot_y_x;
+          space_ptr->l_xx_space(1, 1) += log_g_dot_y_y;
+          space_ptr->l_xx_space(1, 3) += log_g_dot_y_theta;
+          space_ptr->l_xx_space(3, 0) += log_g_dot_theta_x;
+          space_ptr->l_xx_space(3, 1) += log_g_dot_theta_y;
+          space_ptr->l_xx_space(3, 3) += log_g_dot_theta_theta;
+          // 20.4 get_l_ux
+          // 20.5 get_l_uu
+        }
+      }
+    }
+  }
+
+  // 21.0 ref omega_dot
+  if (param_.enable_lat) {
+    double l_x_consider = param_.consider_omega_dot_thr - param_.omega_dot_thr;
+    double l_g_consider =
+        -1.0 / param_.omega_dot_constraint_param.t * std::log(-l_x_consider);
+    double g_omega_dot = action[1] * action[1] - param_.omega_dot_thr;
+    if (g_omega_dot > 0) {
+      double exp_g =
+          std::exp(param_.omega_dot_constraint_exp_param.q2 * g_omega_dot);
+      double exp_g_dot_u1 = param_.omega_dot_constraint_exp_param.q2 * exp_g *
+          2.0 * space_ptr->u_space[1];
+      // 21.1 get_l_x
+      // 21.2 get_l_u
+      space_ptr->l_u_space[1] +=
+          param_.omega_dot_constraint_exp_param.q1 * exp_g_dot_u1;
+      // 21.3 get_l_xx
+      // 21.4 get_l_ux
+      // 21.5 get_l_uu
+      space_ptr->l_uu_space(1, 1) +=
+          param_.omega_dot_constraint_exp_param.q1 *
+              param_.omega_dot_constraint_exp_param.q2 * 2.0 *
+              (exp_g_dot_u1 * space_ptr->u_space[1] + exp_g);
+    } else {
+      double dot_t = -1.0 / param_.omega_dot_constraint_param.t;
+      double g_dot_u1 = 2.0 * space_ptr->u_space[1];
+      double g_dot_u1_u1 = 2.0;
+      // 21.1 get_l_x
+      // 21.2 get_l_u
+      space_ptr->l_u_space[1] += dot_t * g_dot_u1 / g_omega_dot;
+      // 21.3 get_l_xx
+      // 21.4 get_l_ux
+      // 21.5 get_l_uu
+      space_ptr->l_uu_space(1, 1) +=
+          dot_t *
+              ((g_dot_u1 * (-1.0 / (g_omega_dot * g_omega_dot)) * g_dot_u1) +
+                  g_dot_u1_u1 / g_omega_dot);
+    }
+  }
+};
 
 void TrajectoryTreeNode::clear() {
   for (auto &node : next_node_) {
@@ -1560,8 +2568,8 @@ FuncStatus TrajectoryTreeNode::forward_rollout(
   auto &env_ptr = input_->get_env_ptr();
   //  auto &obstacle_cost = input_->get_obstacle_cost();
   pre_space_ptr_ = pre_space_ptr;
-  model.condition_init(index, env_ptr, space_ptr_->l_condition);
-  model.condition_init(index, env_ptr, space_ptr_->l_new_condition);
+  model.condition_init(index, env_ptr, space_ptr_->l_condition,MathUtils::Point2D(init_state[0],init_state[1]));
+  model.condition_init(index, env_ptr, space_ptr_->l_new_condition,MathUtils::Point2D(init_state[0],init_state[1]));
   // update lon condition
   //  pre_process();
   auto log = SolverInfoLog::Instance();
@@ -1665,11 +2673,13 @@ double TrajectoryTreeNode::control(const double &alpha) {
     // 1.0 first point
     space_ptr_->x_new_space = space_ptr_->x_space;
 
-    if (param.enable_dodge){
+    if (param.enable_dodge) {
       space_ptr_->u_new_space[0] = space_ptr_->u_space[0];
-      space_ptr_->u_new_space[1] = space_ptr_->u_space[1]+ alpha * space_ptr_->k_space[1];
-    }else{
-      space_ptr_->u_new_space = space_ptr_->u_space + alpha * space_ptr_->k_space;
+      space_ptr_->u_new_space[1] =
+          space_ptr_->u_space[1] + alpha * space_ptr_->k_space[1];
+    } else {
+      space_ptr_->u_new_space =
+          space_ptr_->u_space + alpha * space_ptr_->k_space;
     }
     double leave_l = 0.0;
     // 2.0 get new condition
@@ -1716,20 +2726,21 @@ double TrajectoryTreeNode::control(const double &alpha) {
                space_ptr_->x_new_space);
 
     if (index_ == param.horizon - 1) {
-      // todo: There is a problem with the calculation of the last control quantity. directly assign the previous control quantity.
+      // todo: There is a problem with the calculation of the last control
+      // quantity. directly assign the previous control quantity.
       space_ptr_->u_new_space = pre_space_ptr_->u_new_space;
     } else {
-      if (param.enable_dodge){
+      if (param.enable_dodge) {
         auto tmp = space_ptr_->u_space + alpha * space_ptr_->k_space +
-            space_ptr_->k_matrix_space *
-                (space_ptr_->x_new_space - space_ptr_->x_space);
+                   space_ptr_->k_matrix_space *
+                       (space_ptr_->x_new_space - space_ptr_->x_space);
         space_ptr_->u_new_space[0] = space_ptr_->u_space[0];
         space_ptr_->u_new_space[1] = tmp[1];
-      }else{
+      } else {
         space_ptr_->u_new_space =
             space_ptr_->u_space + alpha * space_ptr_->k_space +
-                space_ptr_->k_matrix_space *
-                    (space_ptr_->x_new_space - space_ptr_->x_space);
+            space_ptr_->k_matrix_space *
+                (space_ptr_->x_new_space - space_ptr_->x_space);
       }
     }
     // 2.0 get new condition
@@ -1919,27 +2930,30 @@ FuncStatus TrajectoryTreeManager::solve() {
   // 3.0 get result
   space_list_.clear();
   tree_node_list_.get_space_list(s_list, space_list_);
-//    int i = 0;
-//    for(auto & item : space_list_[0]){
-//      std::cout<< "i: "<< i << " ref dis: " << item->l_condition.ref_lat_dis
-//      << " theta: "<< item->l_condition.ref_point_theta << " curva: "<<
-//      item->l_condition.ref_curva<< std::endl;
-//      std::cout << i <<" tree x "<< item->x_space[0] << " y "<<
-//      item->x_space[1]<< " v "<< item->x_space[2] << " theta "<<
-//      item->x_space[3]
-//          << " a "<< item->x_space[4]<< " o "<< item->x_space[5] << std::endl;
-//  //    std::cout << i <<" tree j "<< item->u_space[0] << " k "<<
-//  //   item->u_space[1]<< std::endl;
-//  //    std::cout  << i << " tree f_x "<< item->f_x_space << std::endl;
-//  //    std::cout << "i: " << i<< "l: "<< item->l_space<<std::endl;
-////      std::cout << " i: "<< i << " has lead one "<<
-////      item->l_condition.has_lead_one <<" delta_s: "<< item->l_condition.min_s
-////      - (item->l_condition.pre_s_ego + item->x_space[2] * param.delta_t) -
-////      param.s_constraint_min- 0.5 * param.vehicle_param.length << std::endl;
-//  //    std::cout << " i: "<< i << " s: "<< item->l_condition.s_ego << "
-//  // min_s" << item->l_condition.min_s << std::endl;
-//      i++;
-//    }
+  //    int i = 0;
+  //    for(auto & item : space_list_[0]){
+  //      std::cout<< "i: "<< i << " ref dis: " << item->l_condition.ref_lat_dis
+  //      << " theta: "<< item->l_condition.ref_point_theta << " curva: "<<
+  //      item->l_condition.ref_curva<< std::endl;
+  //      std::cout << i <<" tree x "<< item->x_space[0] << " y "<<
+  //      item->x_space[1]<< " v "<< item->x_space[2] << " theta "<<
+  //      item->x_space[3]
+  //          << " a "<< item->x_space[4]<< " o "<< item->x_space[5] <<
+  //          std::endl;
+  //  //    std::cout << i <<" tree j "<< item->u_space[0] << " k "<<
+  //  //   item->u_space[1]<< std::endl;
+  //  //    std::cout  << i << " tree f_x "<< item->f_x_space << std::endl;
+  //  //    std::cout << "i: " << i<< "l: "<< item->l_space<<std::endl;
+  ////      std::cout << " i: "<< i << " has lead one "<<
+  ////      item->l_condition.has_lead_one <<" delta_s: "<<
+  ///item->l_condition.min_s
+  ////      - (item->l_condition.pre_s_ego + item->x_space[2] * param.delta_t) -
+  ////      param.s_constraint_min- 0.5 * param.vehicle_param.length <<
+  ///std::endl;
+  //  //    std::cout << " i: "<< i << " s: "<< item->l_condition.s_ego << "
+  //  // min_s" << item->l_condition.min_s << std::endl;
+  //      i++;
+  //    }
   //  std::cout<< "----------search time: "<< search_time * 1000 << " ms"<<
   //  std::endl;
   return FuncStatus::FuncSucceed;
