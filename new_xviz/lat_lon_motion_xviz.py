@@ -15,6 +15,8 @@ import rsclpy
 from bokeh.models import CustomJS
 import pandas as pd
 
+epsilon=0.05
+
 def radian_to_degree(num_radian):
     return num_radian * 57.2957795
 
@@ -51,10 +53,11 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         self.build_osp_mgr_task_motion_tree_points_data_frame()
         self.build_osp_mgr_task_motion_tree_speed_limit_data_frame()
         self.build_osp_mgr_task_raw_routing_path_vel_data_frame()
-        self.build_fake_sdmap_path_data_frame()
-        self.build_fake_sdmap_intersection_point_data_frame()
-        self.build_nn_traj_point_data_frame()
-        self.build_nn_traj_v_data_frame()
+        # self.build_fake_sdmap_path_data_frame()
+        # self.build_fake_sdmap_intersection_point_data_frame()
+        # self.build_nn_traj_point_data_frame()
+        # self.build_nn_traj_v_data_frame()
+        self.build_occ_data_frame()
 
         # 主图, 包含 obs_polygon, obs_traj, ego_polygon, lane
         main_figure_viz = FigureViz('Main_Figure', 'X', 'Y', width=750, height =900)
@@ -111,7 +114,7 @@ class XvizPlotLatLonMotion(XvizPlotBase):
                                                                 label='lat_lon_motion_match_point', \
                                                                 line_alpha=1, line_width=6))
         self.add_layer_to_figure(main_figure_viz, args=dict(data_key='raw_routing_pts', \
-                                                                plot_type='scatter', color='Teal',  \
+                                                                plot_type='scatter', color='purple',  \
                                                                 label='raw_routing_path_points', \
                                                                 line_alpha=1.0, line_width=6))     
         self.add_layer_to_figure(main_figure_viz, args=dict(data_key='motion_tree_points', \
@@ -122,18 +125,22 @@ class XvizPlotLatLonMotion(XvizPlotBase):
                                                                 plot_type='scatter', color="#63E398",  \
                                                                 label='road_edges_points', \
                                                                 line_alpha=1.0, line_width=6))
-        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='fake_sdmap_path_point', \
-                                                                plot_type='scatter', color='red',  \
-                                                                label='fake_sdmap_path', \
-                                                                line_alpha=1, line_width=6))
-        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='fake_sdmap_intersection_point', \
-                                                                plot_type='scatter', color='blue',  \
-                                                                label='fake_sdmap_intersection_point', \
-                                                                line_alpha=1, line_width=6))
-        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='nn_traj_point', \
-                                                                plot_type='scatter', color='blue',  \
-                                                                label='nn_traj_point', \
-                                                                line_alpha=1, line_width=6))
+        # self.add_layer_to_figure(main_figure_viz, args=dict(data_key='fake_sdmap_path_point', \
+        #                                                         plot_type='scatter', color='black',  \
+        #                                                         label='fake_sdmap_path', \
+        #                                                         line_alpha=1, line_width=6))
+        # self.add_layer_to_figure(main_figure_viz, args=dict(data_key='fake_sdmap_intersection_point', \
+        #                                                         plot_type='scatter', color='blue',  \
+        #                                                         label='fake_sdmap_intersection_point', \
+        #                                                         line_alpha=1, line_width=6))
+        # self.add_layer_to_figure(main_figure_viz, args=dict(data_key='nn_traj_point', \
+        #                                                         plot_type='scatter', color='blue',  \
+        #                                                         label='nn_traj_point', \
+        #                                                         line_alpha=1, line_width=6))
+        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='occ_info', \
+                                                                plot_type='rect', color='blue',  \
+                                                                label='occ_info', fill_alpha=0, \
+                                                                line_alpha=0.4, line_width=4))
         self.figs_['main_fig'] = main_figure_viz.plot()
         callback_main_fig = main_figure_viz.get_callback_list()        
         
@@ -143,7 +150,7 @@ class XvizPlotLatLonMotion(XvizPlotBase):
                                          width=1100 ,height = 150, match_aspect = False)
         self.add_layer_to_figure(nop_count_figure_viz, args=dict(data_key='nop_counter', \
                                                                 plot_type='single_point', \
-                                                                line_alpha=1, line_width=1))
+                                                                line_alpha=1, line_width=1,label='nop_counter'))
         self.figs_['nop_count'] = nop_count_figure_viz.plot()
         callback_nop_count = nop_count_figure_viz.get_callback_list()
 
@@ -177,9 +184,9 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         self.add_layer_to_figure(motion_res_vel_figure_viz, args=dict(data_key='lat_lon_motion_v_ref', \
                                                                 plot_type='index_line_circle', color='red',  \
                                                                 label='ref_vel'))
-        self.add_layer_to_figure(motion_res_vel_figure_viz, args=dict(data_key='nn_traj_v', \
-                                                                plot_type='index_line_circle', color='black',  \
-                                                            label='nn_traj_v'))
+        # self.add_layer_to_figure(motion_res_vel_figure_viz, args=dict(data_key='nn_traj_v', \
+        #                                                         plot_type='index_line_circle', color='black',  \
+        #                                                     label='nn_traj_v'))
         self.add_layer_to_figure(motion_res_vel_figure_viz, args=dict(data_key='raw_routing_path_vel', \
                                                                 plot_type='index_line_circle', color='Cyan',  \
                                                             label='raw_routing_path_vel'))
@@ -1277,6 +1284,78 @@ class XvizPlotLatLonMotion(XvizPlotBase):
             one_frame_new['data'] = one_data_new
             data_frame_new.append(one_frame_new)
         self.set_data_frame_at_datakey('point_channel', 'ego_lane_center_dist_to_left', data_frame_new)
+        
+    def transform(self,x0, y0, theta0, x_prime, y_prime, theta_prime):
+        # 将自车的航向角转换为旋转矩阵
+        cos_theta0 = math.cos(theta0)
+        sin_theta0 = math.sin(theta0)
+
+        # 计算在local系中的位置
+        x = x0 + x_prime * sin_theta0 + y_prime * cos_theta0
+        y = y0 - x_prime * cos_theta0 + y_prime * sin_theta0
+
+        # 计算在local系中的航向角
+        theta = theta0 + theta_prime
+
+        return x, y, theta
+
+    def find_data_by_time(self,source_list, target_time):
+        for entry in source_list:
+            if abs(entry['t'] - target_time) < epsilon:
+                return entry['data']
+        return None
+        
+    def build_occ_data_frame(self):
+        occ_raw_data_list = self.get_data_frame_at_datakey('occupancyData')
+        # ego_info_list = self.get_data_frame_at_datakey('ego_info_debug')
+        ego_info_list = self.get_data_frame_at_datakey('loc_data')
+        grid_size_default=0.4
+    
+        # transform occ_raw_data_list to local coordinate system
+        data_frame_new = []
+        for occ_item in occ_raw_data_list:
+            one_frame_new = {}
+            one_frame_new['t'] = occ_item['t']
+            one_frame_new['index'] = occ_item['index']
+            x_local=[]
+            y_local=[]
+            angle_local=[]
+            state_local=[]
+            match_data=self.find_data_by_time(ego_info_list,occ_item['t'])
+            if match_data!=None:
+                match_x=match_data['positionFlu']['x']
+                match_y=match_data['positionFlu']['y']
+                match_theta=match_data['yaw']
+                # print(f"match_loc_x:{match_x},match_loc_y:{match_y},match_loc_theta:{match_theta}")
+                
+                for i in range(occ_item['data']['length']):
+                    for j in range(occ_item['data']['width']):
+                        x_ego=occ_item['data']['width'] *0.5*grid_size_default - j*grid_size_default -0.5*grid_size_default
+                        y_ego=i * grid_size_default + grid_size_default / 2
+                        # print(f"x_ego:{x_ego},y_ego:{y_ego}")
+                        x_local_tmp,y_local_tmp,theta_local_tmp=self.transform(match_x,match_y,match_theta,x_ego,y_ego,0.0)
+                        # print(f"trans_x_loc:{x_local_tmp},trans_y_loc:{y_local_tmp}")     
+                        theta_local_tmp = theta_local_tmp-np.pi/2.0
+                        state_tmp=occ_item['data']['occTypeList'][i*occ_item['data']['width']+j] 
+                        if state_tmp == 0:
+                            continue
+                        x_local.append(x_local_tmp)
+                        y_local.append(y_local_tmp)
+                        angle_local.append(theta_local_tmp)
+                        state_local.append(state_tmp)
+                one_data_new = {
+                    "x_local": x_local,
+                    "y_local": y_local,
+                    "theta_local":angle_local,
+                    "occTypeList":state_local,
+                    "width":occ_item['data']['xPartitionInfo']['steps'][0],
+                    "height":occ_item['data']['yPartitionInfo']['steps'][0]
+                    }   
+                one_frame_new['data'] = one_data_new
+                data_frame_new.append(one_frame_new)
+            else:
+                print('can not find ego location info!')
+        self.set_data_frame_at_datakey('', 'occ_info', data_frame_new)
     
     def build_ego_lane_center_dist_to_right_data_frame(self):
         data_frame = self.get_data_frame_at_datakey('lane_debug')
@@ -1356,6 +1435,8 @@ if __name__ == '__main__':
 
     xpilot_plot.add_required_channel(XDEBUG_CHANNEL)
     xpilot_plot.add_required_channel(PLANNING_CHANNEL)
+    xpilot_plot.add_required_channel(LOCALIZATION_CHANNEL)
+    xpilot_plot.add_required_channel(OCC_CHANNEL)
     xpilot_plot.read_msg()
 
     xpilot_plot.figure_plot()

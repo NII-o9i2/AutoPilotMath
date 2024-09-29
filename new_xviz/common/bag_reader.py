@@ -28,6 +28,7 @@ L4_DECISION_CHANNEL = '/decision_planning/decision_target'
 NAV_CHANNEL = '/localization/navstate_info'
 DECISION_DEBUG_CHANNEL = '/decision_planning/decision_debug'
 
+OCC_CHANNEL='/perception/nv_cameras/occ_info'
 
 ## 把类似
 # data_set = [{"x":-35, 'y':-5},{"x":-30, "y":-10},{"x":-25, "y":-15}]
@@ -307,10 +308,11 @@ def read_vehicle_report_msg(msg_json) -> dict:
 
 def read_localization_msg(msg_json) -> dict:
     data = {}
-    data['pos_x'] = msg_json['positionFlu']['x']
-    data['pos_y'] = msg_json['positionFlu']['y']
-    data['theta'] = msg_json['yaw']
-    data['v'] = msg_json['linearVelocity']['x']
+    data['loc_data'] = msg_json
+    # data['pos_x'] = msg_json['positionFlu']['x']
+    # data['pos_y'] = msg_json['positionFlu']['y']
+    # data['theta'] = msg_json['yaw']
+    # data['v'] = msg_json['linearVelocity']['x']
     return data
 
 def read_sdmap_msg(msg_json) -> dict:
@@ -485,6 +487,12 @@ def read_mapless_msg(msg_json) -> dict:
                     
     data['sdmap_points_list']=sdmap_links_geo_points_list
     data['sdmap_node_points_list']=sdmap_start_node_geo_points_list
+    data['lla'] = msg_json['vehicleState']['lla']
+    return data
+
+def read_occ_msg(msg_json)->dict:
+    data = {}
+    data['occupancyData']=msg_json['occupancyData']
     return data
 
 msg_callback_map = {
@@ -502,7 +510,8 @@ msg_callback_map = {
     L4_DECISION_CHANNEL:read_l4_decision_msg,
     NAV_CHANNEL:read_l4_nav_msg,
     DECISION_DEBUG_CHANNEL: read_l4_decision_debug_msg,
-    MAPLESS_CHANNEL: read_mapless_msg
+    MAPLESS_CHANNEL: read_mapless_msg,
+    OCC_CHANNEL:read_occ_msg
     # CHASSIS_A_CHANNEL: read_vehicle_a_channel_msg,
     # VEHICLE_COMMAND_CHANNEL: read_vehicle_command_msg,
     # CONTROL_DEBUG_CHANNEL: read_control_debug_msg

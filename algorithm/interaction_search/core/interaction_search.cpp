@@ -151,6 +151,7 @@ void InteractionSearchRunner::preprocess() {
   unresolved_agent_set_.clear();
 
   constexpr double kIgnoreObsByEuclideanDistThr = 200.0 * 200.0;
+  constexpr double kSurpassObsByLatDisThr = 30.0;
 
   for (auto& obs_pair : common_data_->obs_info) {
     auto& obs_id = obs_pair.first;
@@ -204,6 +205,12 @@ void InteractionSearchRunner::preprocess() {
             InteractionDecision::InteractionDecision_IGNORE;
       }
 
+      continue;
+    }
+
+    if (std::abs(obs_pos_frenet.l) > kSurpassObsByLatDisThr) {
+      resoveld_agent_set_[obs_id] =
+          InteractionDecision::InteractionDecision_SURPASS;
       continue;
     }
 
@@ -766,7 +773,10 @@ void InteractionSearchRunner::gen_search_output() {
     auto& obs_traj = obs_info.traj;
     MathUtils::Range obs_origin_s_range(obs_traj.front().min_s,
                                         obs_traj.front().max_s);
-    if (obs_origin_s_range.IsOverlap(ego_origin_s_range_)) {
+    MathUtils::Range obs_origin_l_range(obs_traj.front().min_l,
+                                        obs_traj.front().max_l);
+    if (obs_origin_s_range.IsOverlap(ego_origin_s_range_) &&
+        !obs_origin_l_range.IsOverlap(ego_origin_l_range_)) {
       continue;
     }
     for (auto& pt : obs_traj) {

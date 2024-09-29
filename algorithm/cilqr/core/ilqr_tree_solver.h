@@ -115,6 +115,7 @@ struct LonObstacleInfo {
   double length = 0.0;
   double theta = 0.0;
   bool is_behind_car = false;
+  bool is_reverse = false;
   MathUtils::Point2D position;
   MathUtils::Point2D v;
   MathUtils::Point2D a;
@@ -270,7 +271,7 @@ struct ILQRParam {
   double lat_acc_lon = 1.5;
   HardConstraintParam s_constraint_param{5.0};
   SoftConstraintParam s_constraint_exp_param{1000.0, 100.0};
-  double s_constraint_min = 0.5;
+  double s_constraint_min = 1.5;
   double cut_in_belief_thr = 1e-2;
   // lat param
   double consider_time = 1.0;

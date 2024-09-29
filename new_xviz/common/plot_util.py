@@ -49,6 +49,8 @@ class PlotUtils:
                 fig.add_layer(LayerScatterLcLonSearchSample, args)
             if plot_type == 'multi_polygon_id':
                 fig.add_layer(LayerMultiPolygonID, args)
+            if plot_type == 'rect':
+                fig.add_layer(LayerRect, args)
     
     @staticmethod
     def activate_figure_option(figs):

@@ -112,7 +112,7 @@ void TrajNodeUtil::calc_cost(
             common_data->cost_obs_collision_base * (31 - frame) / 16.0;
       }
     } else {
-      if (frame < 23) {
+      if (frame < 30) {
         cost = common_data->max_cost;
         accumu_cost = common_data->max_cost;
         return;
@@ -136,7 +136,7 @@ void TrajNodeUtil::calc_cost(
   }
 
   double cost_acc = 0.0;
-  constexpr double kWeightCostAcc = 10.0;
+  constexpr double kWeightCostAcc = 1.0;
   double abs_acc = std::abs(control.acceleration);
   if (abs_acc > 1.5) {
     cost_acc = kWeightCostAcc * abs_acc;
@@ -244,7 +244,14 @@ void TrajNodeUtil::check_collision(
             " ego x " + std::to_string(state.position.x) + " y " +
             std::to_string(state.position.y) + " obs x " +
             std::to_string(obs_pt.position.x) + " y " +
-            std::to_string(obs_pt.position.y));
+            std::to_string(obs_pt.position.y) + " ego_s " +
+            std::to_string(ego_s_range.low()) + " " +
+            std::to_string(ego_s_range.high()) + " ego_l " +
+            std::to_string(ego_l_range.low()) + " " +
+            std::to_string(ego_l_range.high()) + " obs_s " +
+            std::to_string(obs_pt.min_s) + " " + std::to_string(obs_pt.max_s) +
+            " obs_l " + std::to_string(obs_pt.min_l) + " " +
+            std::to_string(obs_pt.max_l));
       }
 
       break;

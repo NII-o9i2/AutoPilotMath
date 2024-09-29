@@ -85,6 +85,8 @@ class ILQREnvInterface {
   //  virtual FuncReturn<double> get_next_point_curva(const MathUtils::Point2D
   //  &pos) = 0;
   virtual FuncReturn<InterfacePointInfo> get_nearest_point_info(
+      const MathUtils::Point2D& pos, const int& frame_count) = 0;
+  virtual FuncReturn<InterfacePointInfo> get_nearest_point_info(
       const MathUtils::Point2D& pos) = 0;
   virtual FuncReturn<double> get_lane_s(const MathUtils::Point2D& pos) = 0;
   virtual FuncReturn<InterfacePursuitPointInfo> get_pursuit_point_info(const InterfaceVehicleInfo& vehicle_info) = 0;

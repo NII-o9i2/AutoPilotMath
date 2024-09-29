@@ -113,6 +113,12 @@ void VehicleModelBicyclePlus::condition_init(
     if (s_return.first==FuncStatus::FuncSucceed && info.length < 7.0){
       tmp.is_behind_car = ego_s + info.length  > s_return.second;
     }
+    if (frame_count > 0){
+      auto & pre_info =  ob_item.second->trajectory_points[frame_count -1];
+      tmp.is_reverse = pre_info.s - info.s > 0.1;
+    }else{
+      tmp.is_reverse = false;
+    }
     tmp.type = info.type;
     tmp.length = info.length;
     tmp.belief = info.belief;
@@ -222,7 +228,8 @@ void VehicleModelBicyclePlus::get_l_condition(
       l_condition.s_ego = s_ego;
       l_condition.pre_s_ego = pre_l_condition.s_ego;
       l_condition.has_ref_v = true;
-      l_condition.v_ref = l_condition.speed_limit;
+      auto info_extern = env_ptr->get_nearest_point_info(pos, frame_count);
+      l_condition.v_ref = info_extern.second.speed_limit;
       l_condition.has_ref_a = true;
       l_condition.a_ref = (l_condition.v_ref - pre_l_condition.v_ref) / param_.delta_t;
     }else{
@@ -253,7 +260,7 @@ void VehicleModelBicyclePlus::get_l_condition(
         double a_obj = item.second.a.x * std::cos(state[3]) +
             item.second.a.y * std::sin(state[3]);
         if (v_obj < 13.888888889){
-          l_condition.speed_limit = std::min(l_condition.speed_limit,v_ego + 5.56);
+          l_condition.speed_limit = std::min(l_condition.speed_limit,v_ego + 1.39);
         }
         double delta_s =
             std::max(1e-3, item.second.s - 0.5 * item.second.length -
@@ -262,8 +269,8 @@ void VehicleModelBicyclePlus::get_l_condition(
           delta_s =
               std::max(1e-3, item.second.s - 1.0 - 0.5 * param_.vehicle_param.length - s_ego);
         }
-        if (!l_condition.has_lead_one ||
-            item.second.s - 0.5 * item.second.length < obs_follow_s) {
+        if ((!item.second.is_reverse|| frame_count < 10) && (!l_condition.has_lead_one ||
+            item.second.s - 0.5 * item.second.length < obs_follow_s)) {
           if (item.second.type == StopLine){
             obs_follow_s = item.second.s - 1.0;
           }else{

@@ -45,7 +45,7 @@ class XvizPlotBase:
     def add_required_channel(self,channel):
         self.required_channel_list_.append(channel)
 
-    def read_bag(self):
+    def read_bag(self,read_time_length=80.0):
         print("*" * 30 + " begin py bag reader " + "*" * 30)
         attr = rsclpy.BagReaderAttribute()
         attr.included_channels = set(self.required_channel_list_)
@@ -74,7 +74,8 @@ class XvizPlotBase:
                 continue
 
             tmp_data = msg_callback_map[tmp_msg.channel_name](tmp_msg.message_json)
-
+            if len(self.data_set_[tmp_msg.channel_name])>0 and tmp_msg.timestamp* 1e-9-next(iter(self.data_set_[tmp_msg.channel_name][0])) > read_time_length:
+                continue 
             self.data_set_[tmp_msg.channel_name].append({tmp_msg.timestamp * 1e-9:tmp_data})
         self.read_input_flag_ = True
         # pprint(self.data_set_)
@@ -169,11 +170,11 @@ class XvizPlotBase:
         except json.JSONDecodeError:
             return "文件不是有效的JSON格式。"
             
-    def read_msg(self):
+    def read_msg(self,read_time_length=80.0):
         if self.read_input_flag_  == False:
             self.get_file_type()
             if self.input_file_type == InputFileType.RSCLBAG:
-                self.read_bag()
+                self.read_bag(read_time_length)
                 self.match_timestamp()
                 self.construct_msg()
             elif self.input_file_type == InputFileType.JSON:

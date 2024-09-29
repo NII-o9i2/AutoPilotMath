@@ -6,6 +6,7 @@ from pprint import pprint
 from bokeh.palettes import Magma, Viridis, Category20
 from bokeh.models import Arrow, VeeHead
 from bokeh.models import Arrow, NormalHead
+from bokeh.transform import factor_cmap
 from math import cos, sin, radians
 from math import *
 import numbers
@@ -1148,3 +1149,79 @@ class LayerMultiPolygonID(LayerBase):
         self.js_callback_ = CustomJS(args=dict(source=self.layer_data_source_, \
                                     data_js_list=self.layer_data_source_js_, 
                                     times=self.times_), code=callback_code)
+
+
+class LayerRect(LayerBase):
+    def __init__(self, args):
+        super().__init__(args)
+
+    def plot(self):
+        if not self.is_valid_:
+            return
+        if self.fig_core_ == None:
+            return
+        
+
+        plot_occ = self.fig_core_.rect(x='x', y='y', width=0.4, height=0.4,\
+                                        source=self.layer_data_source_, legend_label=self.label_,
+                                        fill_color=factor_cmap('state', palette=['gray', 'green', 'red'], factors=["0", "1", "2"]), \
+                                           line_color=None, angle='angle', fill_alpha=0.3)
+
+        hover_tool = HoverTool(renderers=[plot_occ], tooltips=[
+                               ('state', '@state')], mode='mouse')
+        self.fig_core_.add_tools(hover_tool)
+
+    def prepare_layer_data(self):
+        if self.data_frame_ == None:
+            return
+
+        df = pd.DataFrame(self.data_frame_)
+
+        # 初始数据
+        initial_data = self.data_frame_[0]
+        # 生成栅格坐标
+        x = initial_data['data']['x_local']
+        y = initial_data['data']['y_local']
+        angle = initial_data['data']['theta_local']
+        # 转换state为字符串类型
+        initial_states = list(map(str, initial_data['data']['occTypeList']))
+
+        self.layer_data_source_ = ColumnDataSource(data={
+            'x': x,
+            'y': y,
+            'state': initial_states,
+            'angle': angle
+        })
+        self.layer_data_source_js_ = df['data'].tolist()
+
+        self.times_ = df['t'].tolist()
+
+        self.is_valid_ = True
+
+    def create_callback(self):
+        if not self.is_valid_:
+            return
+        callback_code = """
+        const time = cb_obj.value;
+        const find_data = data_list.find(d => Math.abs(d.t - time) < 0.05);
+        if (find_data === undefined) {
+            console.error("No data found for time:", time);
+            return;
+        }
+        const n_rows = find_data['data']['length'];
+        const n_cols = find_data['data']['width'];
+        const grid_size = 0.4;
+        const states = find_data['data']['occTypeList'].map(String);  // 将state转换为字符串
+
+        const x = [];
+        const y = [];
+        source.data['x'] = find_data['data']['x_local'];
+        source.data['y'] = find_data['data']['y_local'];
+        source.data['state'] = states;
+        source.data['angle'] = find_data['data']['theta_local'];
+
+        source.change.emit();
+        """
+        self.js_callback_ = CustomJS(args=dict(source=self.layer_data_source_,
+                                               data_js_list=self.layer_data_source_js_, data_list=self.data_frame_,
+                                               times=self.times_), code=callback_code)
