@@ -7,6 +7,19 @@
 #include "iostream"
 #include "obstacle.h"
 namespace EnvSim {
+
+void EnvSimulator::update_ref_points(const std::vector<MathUtils::Point2D>& ref_pathpoints) {
+  if (ref_pathpoints.empty()) {
+    return;
+  }
+  std::vector<Lane> lanes;
+  Lane tmp_lane(0, ref_pathpoints);
+  tmp_lane.update_center_points(false);
+  lanes.emplace_back(tmp_lane);
+  lane_manager_.update_lanes(lanes);
+  return;
+}
+
 void EnvSimulator::update_case_data(const std::string &file_path) {
   std::ifstream file(file_path);
   if (!file.is_open()) {
@@ -26,7 +39,7 @@ void EnvSimulator::update_case_data(const std::string &file_path) {
       raw_points.emplace_back(pt.front(), pt.back());
     }
     Lane tmp_lane(lane["relative_id"], raw_points);
-    tmp_lane.update_center_points();
+    tmp_lane.update_center_points(true);
     std::cout << "---- loading relative " << lane["relative_id"] << " lane "
               << std::endl;
     lanes.emplace_back(tmp_lane);
@@ -172,6 +185,7 @@ PointInfo EnvSimulator::get_nearest_point_info(const MathUtils::Point2D &pos) {
     return res;
   }
   auto &curvature = lane.get_curva();
+  auto &speed_limit = lane.get_speed_limit();
   if (std::fabs(center_points[index_right].x - center_points[index_left].x) <
       1e-6) {
     res.theta = center_points[index_right].y > center_points[index_left].y
@@ -183,6 +197,7 @@ PointInfo EnvSimulator::get_nearest_point_info(const MathUtils::Point2D &pos) {
                   (center_points[index_right].x - center_points[index_left].x));
   }
   res.curvature = curvature[index_right];
+  res.speed_limit = speed_limit[index_right];
   double pa_x = pos.x - center_points[index_left].x;
   double pa_y = pos.y - center_points[index_left].y;
   double ba_x = center_points[index_right].x - center_points[index_left].x;

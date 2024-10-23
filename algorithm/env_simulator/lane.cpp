@@ -6,8 +6,13 @@
 #include <iostream>
 
 namespace EnvSim {
-void Lane::update_center_points() {
-  interpolate_points(raw_center_points_, center_points_, 120);
+void Lane::update_center_points(const bool interpolate_flag) {
+  if (interpolate_flag) {
+    interpolate_points(raw_center_points_, center_points_, 120);
+  } else {
+    center_points_ = raw_center_points_;;
+  }
+  update_speed_limit(interpolate_flag);
   update_s();
   update_curvature();
 }
@@ -54,6 +59,31 @@ void Lane::update_s() {
     double delta_y = center_points_[i].y - center_points_[i - 1].y;
     double s_tmp = std::hypot(delta_x, delta_y);
     center_points_s_.emplace_back(center_points_s_.back() + s_tmp);
+  }
+}
+
+void Lane::update_speed_limit(const bool interpolate_flag) {
+  speed_limit_.clear();
+  if (interpolate_flag) {
+    for (int i = 0; i < center_points_.size(); i++) {
+      speed_limit_.emplace_back(16.67);
+    }
+  } else {
+    for (int i = 0; i < center_points_.size(); i++) {
+      double velocity = 0.0;
+      if (center_points_.size() == 1) {
+        velocity = 0.0;
+      } else if (i + 1 < center_points_.size()) {
+        velocity =
+            std::hypot(
+                center_points_[i + 1].x - center_points_[i].x,
+                center_points_[i + 1].y - center_points_[i].y) /
+            0.1;
+      } else {
+        velocity = speed_limit_[i - 1];
+      }
+      speed_limit_.emplace_back(velocity);
+    }
   }
 }
 

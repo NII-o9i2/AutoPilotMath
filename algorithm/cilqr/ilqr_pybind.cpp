@@ -116,6 +116,11 @@ PYBIND11_MODULE(pybind_ilqr, m) {
                &LateralLongitudinalMotion::init),
            "Init function without enable_dodge", py::arg("file_path"),
            py::arg("planning_point"))
+    .def("init",
+           py::overload_cast<const std::vector<MathUtils::Point2D> &, const PlanningPoint &>(
+               &LateralLongitudinalMotion::init),
+           "Init function with ref_pts", py::arg("ref_pathpoints"),
+           py::arg("planning_point"))
       .def("get_env", &LateralLongitudinalMotion::get_env)
       .def("get_planning_origin",
            &LateralLongitudinalMotion::get_planning_origin)

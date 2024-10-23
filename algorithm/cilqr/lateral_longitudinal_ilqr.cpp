@@ -22,6 +22,13 @@ void LateralLongitudinalMotion::init(const std::string& file_path,
   input_.planning_origin = planning_point;
 };
 
+void LateralLongitudinalMotion::init(const std::vector<MathUtils::Point2D>& ref_pathpoints,
+                                     const PlanningPoint& planning_point) {
+  enable_dodge_ = false;
+  input_.env.update_ref_points(ref_pathpoints);
+  input_.planning_origin = planning_point;
+};
+
 void LateralLongitudinalMotion::use_idm_model_get_va_ref(
     const double& init_speed,
     const double& init_acc,

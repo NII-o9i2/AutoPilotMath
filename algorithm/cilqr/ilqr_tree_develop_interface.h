@@ -21,8 +21,8 @@ class ILQRDevelopEnvInterface : public ILQREnvInterface {
   //  override;
   FuncReturn<InterfacePointInfo> get_nearest_point_info(
       const MathUtils::Point2D& pos) override;
-  //  FuncReturn<MathUtils::Point2D> get_nearest_point(const MathUtils::Point2D
-  //  &pos) override;
+  FuncReturn<InterfacePointInfo> get_nearest_point_info(
+      const MathUtils::Point2D &pos, const int &frame_count) override;
   FuncReturn<double> get_lane_s(const MathUtils::Point2D& pos) override;
   FuncReturn<InterfacePursuitPointInfo> get_pursuit_point_info(const InterfaceVehicleInfo& vehicle_info) override {
     InterfacePursuitPointInfo info;

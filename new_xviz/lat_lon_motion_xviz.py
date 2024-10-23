@@ -25,6 +25,8 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         super().__init__(bag_path, output)
         
     def figure_plot(self):
+        print("==== start to build data_frame")
+
         # 定制化data_frame
         self.build_obs_first_polygon_data_frame()
         self.build_obs_traj_point_data_frame()
@@ -55,9 +57,11 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         self.build_osp_mgr_task_raw_routing_path_vel_data_frame()
         # self.build_fake_sdmap_path_data_frame()
         # self.build_fake_sdmap_intersection_point_data_frame()
-        # self.build_nn_traj_point_data_frame()
-        # self.build_nn_traj_v_data_frame()
-        self.build_occ_data_frame()
+        self.build_nn_traj_point_data_frame()
+        self.build_nn_traj_v_data_frame()
+        # self.build_occ_data_frame()
+
+        print("==== start to set main_figure")
 
         # 主图, 包含 obs_polygon, obs_traj, ego_polygon, lane
         main_figure_viz = FigureViz('Main_Figure', 'X', 'Y', width=750, height =900)
@@ -133,17 +137,18 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         #                                                         plot_type='scatter', color='blue',  \
         #                                                         label='fake_sdmap_intersection_point', \
         #                                                         line_alpha=1, line_width=6))
-        # self.add_layer_to_figure(main_figure_viz, args=dict(data_key='nn_traj_point', \
-        #                                                         plot_type='scatter', color='blue',  \
-        #                                                         label='nn_traj_point', \
-        #                                                         line_alpha=1, line_width=6))
-        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='occ_info', \
-                                                                plot_type='rect', color='blue',  \
-                                                                label='occ_info', fill_alpha=0, \
-                                                                line_alpha=0.4, line_width=4))
+        self.add_layer_to_figure(main_figure_viz, args=dict(data_key='nn_traj_point', \
+                                                                plot_type='scatter', color='blue',  \
+                                                                label='nn_traj_point', \
+                                                                line_alpha=1, line_width=6))
+        # self.add_layer_to_figure(main_figure_viz, args=dict(data_key='occ_info', \
+        #                                                         plot_type='rect', color='blue',  \
+        #                                                         label='occ_info', fill_alpha=0, \
+        #                                                         line_alpha=0.4, line_width=4))
         self.figs_['main_fig'] = main_figure_viz.plot()
-        callback_main_fig = main_figure_viz.get_callback_list()        
-        
+        callback_main_fig = main_figure_viz.get_callback_list()   
+
+        print("==== start to set nop_count")     
 
         # nop count相关
         nop_count_figure_viz = FigureViz('Nop_Counter', 'Index', 'Data', y_range=None, 
@@ -184,9 +189,9 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         self.add_layer_to_figure(motion_res_vel_figure_viz, args=dict(data_key='lat_lon_motion_v_ref', \
                                                                 plot_type='index_line_circle', color='red',  \
                                                                 label='ref_vel'))
-        # self.add_layer_to_figure(motion_res_vel_figure_viz, args=dict(data_key='nn_traj_v', \
-        #                                                         plot_type='index_line_circle', color='black',  \
-        #                                                     label='nn_traj_v'))
+        self.add_layer_to_figure(motion_res_vel_figure_viz, args=dict(data_key='nn_traj_v', \
+                                                                plot_type='index_line_circle', color='black',  \
+                                                            label='nn_traj_v'))
         self.add_layer_to_figure(motion_res_vel_figure_viz, args=dict(data_key='raw_routing_path_vel', \
                                                                 plot_type='index_line_circle', color='Cyan',  \
                                                             label='raw_routing_path_vel'))
@@ -242,6 +247,8 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         self.figs_['motion_res_theta'] = motion_res_theta_figure_viz.plot()
         callback_theta = motion_res_theta_figure_viz.get_callback_list()
 
+        print("==== start to set lat_dis_to_ref_line")
+
         # lat_dis_to_ref_line
         lat_dis_to_ref_line_viz = FigureViz('Lat_Dis_To_Ref_Line', 'Index', 'Data/m', x_range = [-1,31],y_range = [-3, 3], 
                                          width=550 ,height = 300, match_aspect = False)
@@ -250,6 +257,8 @@ class XvizPlotLatLonMotion(XvizPlotBase):
                                                                 label='lat_dis_to_ref_line'))
         self.figs_['lat_dis_to_ref_line'] = lat_dis_to_ref_line_viz.plot()
         callback_lat_dis_to_ref_line = lat_dis_to_ref_line_viz.get_callback_list()
+
+        print("==== start to set ref_lat_acc_figure")
 
         # ref_lat_acc
         ref_lat_acc_figure_viz = FigureViz('Ref_Lat_Acc', 'Index', 'Data/m/s^2', x_range = [-1,31],y_range = [-2.0, 2.0], 
@@ -260,6 +269,8 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         self.figs_['ref_lat_acc'] = ref_lat_acc_figure_viz.plot()
         callback_ref_lat_acc = ref_lat_acc_figure_viz.get_callback_list()
 
+        print("==== start to set lead_s_figure")
+
         # lead_s
         lead_s_figure_viz = FigureViz('Lead_S', 'Index', 'Data/m', x_range = [-1,31],y_range = [-30, 200], 
                                          width=550 ,height = 300, match_aspect = False)
@@ -268,6 +279,8 @@ class XvizPlotLatLonMotion(XvizPlotBase):
                                                                 label='lead_s'))
         self.figs_['lead_s'] = lead_s_figure_viz.plot()
         callback_lead_s = lead_s_figure_viz.get_callback_list()
+
+        print("==== start to set osp_routing_path_omega_figure")   
 
          # osp routing path omega
         osp_routing_path_omega_figure_viz = FigureViz(
@@ -285,6 +298,8 @@ class XvizPlotLatLonMotion(XvizPlotBase):
                                                                 label='osp_routing_path_omega'))
         self.figs_["osp_rp_omega"] = osp_routing_path_omega_figure_viz.plot()
         callback_osp_rt_omega = osp_routing_path_omega_figure_viz.get_callback_list()
+
+        print("==== start to set osp_motion_tree_speed_limit_figure")   
                
         # osp motion tree speed limit
         osp_motion_tree_speed_limit_figure_viz = FigureViz(
@@ -319,6 +334,9 @@ class XvizPlotLatLonMotion(XvizPlotBase):
         
         self.activate_figure_option()
         self.add_check_group()
+
+        print("==== start to show2html") 
+
         self.show2html()
         return
     
@@ -340,8 +358,8 @@ class XvizPlotLatLonMotion(XvizPlotBase):
                 x = []
                 y = []
                 for point in one_obstacle_polygon:
-                    x.append(point['x'])
-                    y.append(point['y'])
+                    x.append(round(point['x'],2))
+                    y.append(round(point['y'],2))
                 xs.append(x)
                 ys.append(y)
                 ids.append(one_data_id)

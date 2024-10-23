@@ -13,7 +13,7 @@ class Lane {
   Lane(const int &_relative_id,
        const std::vector<MathUtils::Point2D> &_raw_points)
       : raw_center_points_(_raw_points), relative_id_(_relative_id){};
-  void update_center_points();
+  void update_center_points(const bool interpolate_flag);
 
   const int &get_id() const { return relative_id_; };
 
@@ -26,11 +26,15 @@ class Lane {
 
   const std::vector<double> &get_curva() const { return curva_; };
 
+  const std::vector<double> &get_speed_limit() const { return speed_limit_; };
+
   double get_s(const MathUtils::Point2D &point) const;
+
 
  private:
   void update_curvature();
   void update_s();
+  void update_speed_limit(const bool interpolate_flag);
 
  private:
   std::vector<MathUtils::Point2D> center_points_;
@@ -39,6 +43,7 @@ class Lane {
   // -1 left 0 middle 1 right
   int relative_id_ = 0;
   std::vector<double> curva_;  // kappa for every point
+  std::vector<double> speed_limit_; // speed limit for every point
 };
 
 class LaneManager {

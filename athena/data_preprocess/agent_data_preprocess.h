@@ -177,28 +177,46 @@ class AgentOutputTensor {
     agent_enc_num_t_.create(1);                              // [1] @int64
     agent_enc_edge_index_t_.create(2, param_.N_t);           // [2, N_t] @int64
     agent_enc_r_t_.create(param_.N_t, 4);                     // [N_t, 4] @float32
+    agent_enc_mask_r2src_t_.create(param_.N_t, param_.N_a * param_.N_h);   //[param_.N_t, param_.N_a * param_.N_h] @bool
+    agent_enc_mask_r2dst_t_.create(param_.N_t, param_.N_a * param_.N_h);   //[param_.N_t, param_.N_a * param_.N_h] @bool
     agent_enc_num_a2a_.create(1);                             // [1] @int64
     agent_enc_edge_index_a2a_.create(2,param_.N_a2a);        // [2, N_a2a] @int64
     agent_enc_r_a2a_.create(param_.N_a2a,3);                  // [N_a2a, 3] @float32
+    agent_enc_mask_r2src_a2a_.create(param_.N_a2a, param_.N_h * param_.N_a);    //[param_.N_a2a, param_.N_h * param_.N_a] @bool
+    agent_enc_mask_r2dst_a2a_.create(param_.N_a2a, param_.N_h * param_.N_a);    //[param_.N_a2a, param_.N_h * param_.N_a] @bool
     agent_predict_mask_.create(param_.N_a, param_.N_hp);     // [N_a, N_hp] @bool
     dec_num_t2m_.create(1);                                 // [1] @int64
     dec_edge_index_t2m_.create(2,param_.N_t2m);           // [2, N_t2m] @int64
     dec_r_t2m_.create(param_.N_t2m,4);                   // [N_t2m, 4] @float32
+    dec_r_t2m_mask_r2src_.create(param_.N_t2m, param_.N_a * param_.N_h);
+    dec_r_t2m_mask_r2dst_.create(param_.N_t2m, param_.N_a);
     dec_num_t2m_multi_.create(1);                           // [1] @int64
     dec_edge_index_t2m_multi_.create(2, param_.N_t2m * param_.N_m);    // [2, N_t2m] @int64
+    dec_mask_r2src_t2m_multi_.create(param_.N_t2m * param_.N_m, param_.N_a * param_.N_h);
+    dec_mask_r2dst_t2m_multi_.create(param_.N_t2m * param_.N_m, param_.N_a * param_.N_m);
     dec_num_a2m_.create(1);                                      // [1] @int64
     dec_edge_index_a2m_.create(2,param_.N_a2m);               // [2, N_a2m] @int64
     dec_r_a2m_.create(param_.N_a2m,3);                        // [N_a2m, 3] @float32
+    dec_r_a2m_mask_r2src_.create(param_.N_a2m, param_.N_a);
+    dec_r_a2m_mask_r2dst_.create(param_.N_a2m, param_.N_a);
     dec_num_a2m_multi_.create(1);                           // [1] @int64
     dec_edge_index_a2m_multi_.create(2, param_.N_a2m_multi);   // [2, N_a2m_multi]
+    dec_mask_r2src_a2m_multi_.create(param_.N_a2m_multi, param_.N_a * param_.N_m);
+    dec_mask_r2dst_a2m_multi_.create(param_.N_a2m_multi, param_.N_a * param_.N_m);
     dec_num_m2m_.create(1);  // [1] @int64
     dec_edge_index_m2m_.create(2,param_.N_m2m);             // [2, N_m2m] @int64
+    dec_mask_r2src_m2m_.create(param_.N_m2m, param_.N_a * param_.N_m);
+    dec_mask_r2dst_m2m_.create(param_.N_m2m, param_.N_a * param_.N_m);
     agent_enc_num_pl2a_.create(1);                            // [1] @int64
     agent_enc_edge_index_pl2a_.create(2,param_.N_pl2a);     // [2, N_pl2a] @int64
     agent_enc_r_pl2a_.create(param_.N_pl2a,3);                // [N_pl2a, 3] @float32
+    agent_enc_mask_r2src_pl2a_.create(param_.N_pl2a, param_.N_h * param_.N_pl);    //[param_.N_a2a, param_.N_h * param_.N_pl] @bool
+    agent_enc_mask_r2dst_pl2a_.create(param_.N_pl2a, param_.N_h * param_.N_a);    //[param_.N_a2a, param_.N_h * param_.N_a] @bool
     dec_num_pl2m_multi_.create(1);                               // [1] @int64
     dec_edge_index_pl2m_multi_.create(2, param_.N_pl2m_multi);      // [2, N_pl2m_multi] @int64
     dec_r_pl2m_.create(param_.N_pl2m,3);                // [N_pl2m, 3] @float32
+    dec_mask_r2src_pl2m_multi_.create(param_.N_pl2m_multi, param_.N_pl * param_.N_m);
+    dec_mask_r2dst_pl2m_multi_.create(param_.N_pl2m_multi, param_.N_a * param_.N_m);
   }
 
 
@@ -238,6 +256,14 @@ class AgentOutputTensor {
     return  agent_enc_r_t_;
   }
 
+  TensorD2<float> &get_agent_enc_mask_r2src_t() {
+    return  agent_enc_mask_r2src_t_;
+  }
+
+  TensorD2<float> &get_agent_enc_mask_r2dst_t() {
+    return  agent_enc_mask_r2dst_t_;
+  }
+
   TensorD1<int> &get_agent_enc_num_a2a() {
     return agent_enc_num_a2a_;
   }
@@ -248,6 +274,14 @@ class AgentOutputTensor {
 
   TensorD2<float> &get_agent_enc_r_a2a() {
     return  agent_enc_r_a2a_;
+  }
+
+  TensorD2<float> &get_agent_enc_mask_r2src_a2a() {
+    return  agent_enc_mask_r2src_a2a_;
+  }
+
+  TensorD2<float> &get_agent_enc_mask_r2dst_a2a() {
+    return  agent_enc_mask_r2dst_a2a_;
   }
 
   TensorD2<bool> &get_agent_predict_mask() {
@@ -266,12 +300,28 @@ class AgentOutputTensor {
     return dec_r_t2m_;
   }
 
+  TensorD2<float> &get_dec_r_t2m_mask_r2src() {
+    return dec_r_t2m_mask_r2src_;
+  }
+
+  TensorD2<float> &get_dec_r_t2m_mask_r2dst() {
+    return dec_r_t2m_mask_r2dst_;
+  }
+
   TensorD1<int> &get_dec_num_t2m_multi() {
     return dec_num_t2m_multi_;
   }
 
   TensorD2<int64_t> &get_dec_edge_index_t2m_multi() {
     return dec_edge_index_t2m_multi_;
+  }
+
+  TensorD2<float> &get_dec_mask_r2src_t2m_multi() {
+    return dec_mask_r2src_t2m_multi_;
+  }
+
+  TensorD2<float> &get_dec_mask_r2dst_t2m_multi() {
+    return dec_mask_r2dst_t2m_multi_;
   }
 
   TensorD1<int> &get_dec_num_a2m() {
@@ -286,6 +336,14 @@ class AgentOutputTensor {
     return dec_r_a2m_;
   }
 
+  TensorD2<float> &get_dec_r_a2m_mask_r2src() {
+    return dec_r_a2m_mask_r2src_;
+  }
+
+  TensorD2<float> &get_dec_r_a2m_mask_r2dst() {
+    return dec_r_a2m_mask_r2dst_;
+  }
+
   TensorD1<int> &get_dec_num_a2m_multi() {
     return dec_num_a2m_multi_;
   }
@@ -294,12 +352,28 @@ class AgentOutputTensor {
     return dec_edge_index_a2m_multi_;
   }
 
+  TensorD2<float> &get_dec_mask_r2src_a2m_multi() {
+    return dec_mask_r2src_a2m_multi_;
+  }
+
+  TensorD2<float> &get_dec_mask_r2dst_a2m_multi() {
+    return dec_mask_r2dst_a2m_multi_;
+  }
+
   TensorD1<int> &get_dec_num_m2m() {
     return dec_num_m2m_;
   }
 
   TensorD2<int64_t> &get_dec_edge_index_m2m() {
     return dec_edge_index_m2m_;
+  }
+
+  TensorD2<float> &get_dec_mask_r2src_m2m() {
+    return dec_mask_r2src_m2m_;
+  }
+
+  TensorD2<float> &get_dec_mask_r2dst_m2m() {
+    return dec_mask_r2dst_m2m_;
   }
 
   TensorD1<int> &get_agent_enc_num_pl2a() {
@@ -314,6 +388,14 @@ class AgentOutputTensor {
     return agent_enc_r_pl2a_;
   }
 
+  TensorD2<float> &get_agent_enc_mask_r2src_pl2a() {
+    return  agent_enc_mask_r2src_pl2a_;
+  }
+
+  TensorD2<float> &get_agent_enc_mask_r2dst_pl2a() {
+    return  agent_enc_mask_r2dst_pl2a_;
+  }
+
   TensorD1<int> &get_dec_num_pl2m_multi() {
     return dec_num_pl2m_multi_;
   }
@@ -324,6 +406,14 @@ class AgentOutputTensor {
 
   TensorD2<float> &get_dec_r_pl2m() {
     return dec_r_pl2m_;
+  }
+
+  TensorD2<float> &get_dec_mask_r2src_pl2m_multi() {
+    return  dec_mask_r2src_pl2m_multi_;
+  }
+
+  TensorD2<float> &get_dec_mask_r2dst_pl2m_multi() {
+    return  dec_mask_r2dst_pl2m_multi_;
   }
 
   int& get_valid_num() {
@@ -342,30 +432,48 @@ class AgentOutputTensor {
   TensorD3<float> agent_enc_x_a_;                // [N_a, N_h, 4] @float32
   TensorD1<int> agent_enc_num_t_;                // [1] @int64
   TensorD2<int64_t> agent_enc_edge_index_t_;         // [2, N_t] @int64
+  TensorD2<float> agent_enc_mask_r2src_t_;        // [N_t, N_a * N_h] @bool
+  TensorD2<float> agent_enc_mask_r2dst_t_;        // [N_t, N_a * N_h] @bool
   TensorD2<float> agent_enc_r_t_;                // [N_t, 4] @float32
   TensorD1<int> agent_enc_num_a2a_;              // [1] @int64
   TensorD2<int64_t> agent_enc_edge_index_a2a_;       // [2, N_a2a] @int64
   TensorD2<float> agent_enc_r_a2a_;              // [N_a2a, 3] @float32
+  TensorD2<float> agent_enc_mask_r2src_a2a_;
+  TensorD2<float> agent_enc_mask_r2dst_a2a_;
   TensorD1<int> agent_enc_num_pl2a_;             // [1] @int64
   TensorD2<int64_t> agent_enc_edge_index_pl2a_;      // [2, N_pl2a] @int64
   TensorD2<float> agent_enc_r_pl2a_;             // [N_pl2a, 3] @float32
+  TensorD2<float> agent_enc_mask_r2src_pl2a_;
+  TensorD2<float> agent_enc_mask_r2dst_pl2a_;
 
   // decoder
   TensorD1<int> dec_num_t2m_;                    // [1] @int64
   TensorD2<int> dec_edge_index_t2m_;             // [2, N_t2m] @int64
   TensorD2<float> dec_r_t2m_;                    // [N_t2m, 4] @float32
+  TensorD2<float> dec_r_t2m_mask_r2src_;
+  TensorD2<float> dec_r_t2m_mask_r2dst_;
   TensorD1<int> dec_num_t2m_multi_;              // [1] @int64
   TensorD2<int64_t> dec_edge_index_t2m_multi_;       // [2, N_t2m] @int64
+  TensorD2<float> dec_mask_r2src_t2m_multi_;
+  TensorD2<float> dec_mask_r2dst_t2m_multi_;
   TensorD1<int> dec_num_a2m_;                    // [1] @int64
   TensorD2<int> dec_edge_index_a2m_;             // [2, N_a2m] @int64
   TensorD2<float> dec_r_a2m_;                    // [N_a2m, 3] @float32
+  TensorD2<float> dec_r_a2m_mask_r2src_;
+  TensorD2<float> dec_r_a2m_mask_r2dst_;
   TensorD1<int> dec_num_a2m_multi_;              // [1] @int64
   TensorD2<int64_t> dec_edge_index_a2m_multi_;       // [2, N_a2m_multi]
+  TensorD2<float> dec_mask_r2src_a2m_multi_;
+  TensorD2<float> dec_mask_r2dst_a2m_multi_;
   TensorD1<int> dec_num_m2m_;                    // [1] @int64
   TensorD2<int64_t> dec_edge_index_m2m_;             // [2, N_m2m] @int64
+  TensorD2<float> dec_mask_r2src_m2m_;
+  TensorD2<float> dec_mask_r2dst_m2m_;
   TensorD1<int> dec_num_pl2m_multi_;              // [1] @int64
   TensorD2<int64_t> dec_edge_index_pl2m_multi_;       // [2, N_pl2m_multi] @int64
   TensorD2<float> dec_r_pl2m_;                   // [N_pl2m, 3] @float32
+  TensorD2<float> dec_mask_r2src_pl2m_multi_;
+  TensorD2<float> dec_mask_r2dst_pl2m_multi_;
 };
 
 class AgentInfoManager {

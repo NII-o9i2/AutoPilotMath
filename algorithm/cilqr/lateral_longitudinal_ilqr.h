@@ -36,6 +36,9 @@ class LateralLongitudinalMotion {
             bool enable_dodge);
   void init(const std::string &file_path, const PlanningPoint &planning_point);
 
+  void init(const std::vector<MathUtils::Point2D>& ref_pathpoints,
+            const PlanningPoint& planning_point);
+
   const EnvSim::EnvSimulator &get_env() const { return input_.env; }
   const PlanningPoint &get_planning_origin() const {
     return input_.planning_origin;

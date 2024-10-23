@@ -240,11 +240,15 @@ class MapTensorOutput {
     map_enc_num_pt2pl_.create(1);
     map_enc_edge_index_pt2pl_.create(2, params.N_pt2pl);
     map_enc_r_pt2pl_.create(params.N_pt2pl, 3);
+    map_enc_mask_r2src_pt2pl_.create(params.N_pt2pl, params.N_pt);
+    map_enc_mask_r2dst_pt2pl_.create(params.N_pt2pl, params.N_pl);
 
     map_enc_num_pl2pl_.create(1);
     map_enc_edge_index_pl2pl_.create(2, params.N_pl2pl);
     map_enc_type_pl2pl_.create(params.N_pl2pl);
     map_enc_r_pl2pl_.create(params.N_pl2pl, 3);
+    map_enc_mask_r2src_pl2pl_.create(params.N_pl2pl, params.N_pl);
+    map_enc_mask_r2dst_pl2pl_.create(params.N_pl2pl, params.N_pl);
   }
   TensorD2<float> &get_map_polygon_position() {
     return map_polygon_position_;
@@ -295,6 +299,12 @@ class MapTensorOutput {
   TensorD2<float> &get_map_enc_r_pt2pl() {
     return map_enc_r_pt2pl_;
   }
+  TensorD2<float> &get_map_enc_mask_r2src_pt2pl() {
+    return map_enc_mask_r2src_pt2pl_;
+  }
+  TensorD2<float> &get_map_enc_mask_r2dst_pt2pl() {
+    return map_enc_mask_r2dst_pt2pl_;
+  }
 
   TensorD1<int> &get_map_enc_num_pl2pl() {
     return map_enc_num_pl2pl_;
@@ -307,6 +317,12 @@ class MapTensorOutput {
   }
   TensorD2<float> &get_map_enc_r_pl2pl() {
     return map_enc_r_pl2pl_;
+  }
+  TensorD2<float> &get_map_enc_mask_r2src_pl2pl() {
+    return map_enc_mask_r2src_pl2pl_;
+  }
+  TensorD2<float> &get_map_enc_mask_r2dst_pl2pl() {
+    return map_enc_mask_r2dst_pl2pl_;
   }
 
  private:
@@ -326,11 +342,15 @@ class MapTensorOutput {
   TensorD1<int> map_enc_num_pt2pl_;
   TensorD2<int64_t> map_enc_edge_index_pt2pl_;
   TensorD2<float> map_enc_r_pt2pl_;
+  TensorD2<float> map_enc_mask_r2src_pt2pl_;
+  TensorD2<float> map_enc_mask_r2dst_pt2pl_;
 
   TensorD1<int> map_enc_num_pl2pl_;
   TensorD2<int64_t> map_enc_edge_index_pl2pl_;
   TensorD1<int32_t> map_enc_type_pl2pl_;
   TensorD2<float> map_enc_r_pl2pl_;
+  TensorD2<float> map_enc_mask_r2src_pl2pl_;
+  TensorD2<float> map_enc_mask_r2dst_pl2pl_;
 };
 
 class MapInfoManager {

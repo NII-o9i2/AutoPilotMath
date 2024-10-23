@@ -15,10 +15,12 @@ struct PointInfo {
   double theta = 0.0;
   double curvature = 0.0;
   bool is_on_left = true;
+  double speed_limit = 0.0;
 };
 class EnvSimulator {
  public:
   void update_case_data(const std::string &file_path);
+  void update_ref_points(const std::vector<MathUtils::Point2D>& ref_pathpoints);
 
   std::vector<std::vector<MathUtils::Point2D>> get_all_lanes_center_points() {
     return lane_manager_.get_all_lanes_center_points();

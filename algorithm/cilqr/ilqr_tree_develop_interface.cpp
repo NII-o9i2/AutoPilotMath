@@ -35,6 +35,24 @@ FuncReturn<InterfacePointInfo> ILQRDevelopEnvInterface::get_nearest_point_info(
   tmp.theta = info.theta;
   tmp.curvature = info.curvature;
   tmp.is_on_left = info.is_on_left;
+  tmp.speed_limit = info.speed_limit;
+  return FuncReturn<InterfacePointInfo>{FuncStatus::FuncSucceed, tmp};
+}
+
+// for adapt dlp interface, "frame_count" was not use
+FuncReturn<InterfacePointInfo> ILQRDevelopEnvInterface::get_nearest_point_info(
+    const MathUtils::Point2D &pos, const int &frame_count) {
+  InterfacePointInfo tmp;
+  if (env_simulator_ == nullptr) {
+    return FuncReturn<InterfacePointInfo>{FuncStatus::FuncFailed, tmp};
+  }
+  auto info = env_simulator_->get_nearest_point_info(pos);
+
+  tmp.point = info.point;
+  tmp.theta = info.theta;
+  tmp.curvature = info.curvature;
+  tmp.is_on_left = info.is_on_left;
+  tmp.speed_limit = info.speed_limit;
   return FuncReturn<InterfacePointInfo>{FuncStatus::FuncSucceed, tmp};
 }
 

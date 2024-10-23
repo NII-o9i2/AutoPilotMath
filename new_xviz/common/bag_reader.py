@@ -199,11 +199,17 @@ def read_xdebug_msg(msg_json) -> dict:
         except KeyError:
             return None 
 
+    # def get_nn_traj_debug():
+    #     try:
+    #         return json_msg['planner_debug']['nn_traj_debug']
+    #     except KeyError:
+    #         return None 
+        
     def get_nn_traj_debug():
         try:
-            return json_msg['planner_debug']['nn_traj_debug']
+            return json_msg["planner_debug"]['world_model_debug']['nn_traj_debug']
         except KeyError:
-            return None 
+            return None
         
     data['osp_ref_point_by_ego_car_debug'] = get_osp_debug('osp_ref_point_by_ego_car_debug')
     data['osp_leader_car_history_pose_debug'] = get_osp_debug('osp_leader_car_history_pose_debug')

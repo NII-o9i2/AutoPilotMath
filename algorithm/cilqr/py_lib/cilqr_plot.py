@@ -14,7 +14,7 @@ import sys
 sys.path.append('../../../build/cilqr')
 import pybind_ilqr
 sys.path.append(os.getcwd() + '/../py_lib')
-from cilqr_plot_xviz import *
+# from cilqr_plot_xviz import *
 
 
 def run_cilqr_case(path,point_init):
@@ -519,7 +519,7 @@ def plot_cilqr_constraint(lane,objs,planning_origin,traj,traj_new,use_exp_list):
         theta=theta_new_use_exp,
     ))
     scatter_new = p.scatter('x', 'y', source=source, line_width=2, size = 8 ,color = Magma[6][3], legend_label="traj_new")
-    scatter_new_exp = p.diamond('x', 'y', source=source_exp, line_width=2, size = 10 ,color = Magma[6][4], legend_label="traj_new_exp")
+    scatter_new_exp = p.scatter('x', 'y', source=source_exp, line_width=2, size=10, color=Magma[6][4], marker='diamond', legend_label="traj_new_exp")
     p.text(x_text,y_text, text=text_l,text_font_size = "7pt")
     hover_tool = HoverTool(renderers=[scatter_new,scatter_new_exp], tooltips=[
                                                             ("x", "@x"),
@@ -658,7 +658,7 @@ def plot_tree_cilqr_constraint(lane,objs,planning_origin,traj,traj_trees,use_exp
     ))
     scatter_new = p.scatter('x', 'y', source=source, line_width=2, size = 8 ,color = Magma[6][3], legend_label="traj_new")
     scatter_match_point = p.scatter('x', 'y', source=source_match_point, line_width=2, size = 8 ,color = Magma[6][5], legend_label="match_point")
-    scatter_new_exp = p.diamond('x', 'y', source=source_exp, line_width=2, size = 10 ,color = Magma[6][4], legend_label="traj_new_exp")
+    scatter_new_exp = p.scatter('x', 'y', source=source_exp, line_width=2, size = 10 ,color = Magma[6][4], marker='diamond', legend_label="traj_new_exp")
     p.text(x_text,y_text, text=text_l,text_font_size = "7pt")
     hover_tool = HoverTool(renderers=[scatter_new,scatter_new_exp], tooltips=[
                                                             ("x", "@x"),
@@ -675,7 +675,7 @@ def plot_tree_cilqr_constraint(lane,objs,planning_origin,traj,traj_trees,use_exp
             pts_tmp_x.append(pt.x)
             pts_tmp_y.append(pt.y)
 
-        p.scatter(pts_tmp_x, pts_tmp_y, line_width=2, color = Magma[6][a], legend_label="lane",alpha = 0.1)
+        p.scatter(pts_tmp_x, pts_tmp_y, line_width=2, color = 'blue', legend_label="lane",alpha = 0.1)
         a = a +1
     # objs
 

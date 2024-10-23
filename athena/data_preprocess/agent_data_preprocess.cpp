@@ -235,6 +235,20 @@ bool AgentInfoManager::data_preprocess() {
     tensor_agent_enc_r_t_data[i].resize(4, 0.0);
   }
 
+  auto &tensor_agent_enc_mask_r2src_t = output_tensor_.get_agent_enc_mask_r2src_t();
+  auto &tensor_agent_enc_mask_r2src_t_data = tensor_agent_enc_mask_r2src_t.data();
+  for (int i = 0; i < tensor_param_.N_t; i++) {
+    tensor_agent_enc_mask_r2src_t_data[i].resize(tensor_param_.N_a * tensor_param_.N_h, 0.0);
+    std::fill(tensor_agent_enc_mask_r2src_t_data[i].begin(), tensor_agent_enc_mask_r2src_t_data[i].end(), 0.0);
+  }
+
+  auto &tensor_agent_enc_mask_r2dst_t = output_tensor_.get_agent_enc_mask_r2dst_t();
+  auto &tensor_agent_enc_mask_r2dst_t_data = tensor_agent_enc_mask_r2dst_t.data();
+  for (int i = 0; i < tensor_param_.N_t; i++) {
+    tensor_agent_enc_mask_r2dst_t_data[i].resize(tensor_param_.N_a * tensor_param_.N_h, 0.0);
+    std::fill(tensor_agent_enc_mask_r2dst_t_data[i].begin(), tensor_agent_enc_mask_r2dst_t_data[i].end(), 0.0);
+  }
+
   auto &tensor_agent_predict_mask = output_tensor_.get_agent_predict_mask();
   auto &tensor_agent_predict_mask_data = tensor_agent_predict_mask.data();
 
@@ -254,11 +268,35 @@ bool AgentInfoManager::data_preprocess() {
       tensor_param_.N_t2m * tensor_param_.N_m, 0);
   tensor_dec_edge_index_t2m_multi_data[0].resize(
       tensor_param_.N_t2m * tensor_param_.N_m, 0);
+  auto &tensor_dec_mask_r2src_t2m_multi = output_tensor_.get_dec_mask_r2src_t2m_multi();
+  auto &tensor_dec_mask_r2src_t2m_multi_data = tensor_dec_mask_r2src_t2m_multi.data();
+  for (int i = 0; i < tensor_param_.N_t2m * tensor_param_.N_m; i++) {
+    tensor_dec_mask_r2src_t2m_multi_data[i].resize(tensor_param_.N_a * tensor_param_.N_h, 0.0);
+    std::fill(tensor_dec_mask_r2src_t2m_multi_data[i].begin(), tensor_dec_mask_r2src_t2m_multi_data[i].end(), 0.0);
+  }
+  auto &tensor_dec_mask_r2dst_t2m_multi = output_tensor_.get_dec_mask_r2dst_t2m_multi();
+  auto &tensor_dec_mask_r2dst_t2m_multi_data = tensor_dec_mask_r2dst_t2m_multi.data();
+  for (int i = 0; i < tensor_param_.N_t2m * tensor_param_.N_m; i++) {
+    tensor_dec_mask_r2dst_t2m_multi_data[i].resize(tensor_param_.N_a * tensor_param_.N_m, 0.0);
+    std::fill(tensor_dec_mask_r2dst_t2m_multi_data[i].begin(), tensor_dec_mask_r2dst_t2m_multi_data[i].end(), 0.0);
+  }
 
   auto &tensor_dec_edge_index_t2m = output_tensor_.get_dec_edge_index_t2m();
   auto &tensor_dec_edge_index_t2m_data = tensor_dec_edge_index_t2m.data();
   tensor_dec_edge_index_t2m_data[0].resize(tensor_param_.N_t2m, 0);
   tensor_dec_edge_index_t2m_data[1].resize(tensor_param_.N_t2m, 0);
+  auto &tensor_dec_r_t2m_mask_r2src = output_tensor_.get_dec_r_t2m_mask_r2src();
+  auto &tensor_dec_r_t2m_mask_r2src_data = tensor_dec_r_t2m_mask_r2src.data();
+  for (int i = 0; i < tensor_param_.N_t2m; i++) {
+    tensor_dec_r_t2m_mask_r2src_data[i].resize(tensor_param_.N_t2m, 0.0);
+    std::fill(tensor_dec_r_t2m_mask_r2src_data[i].begin(), tensor_dec_r_t2m_mask_r2src_data[i].end(), 0.0);
+  }
+  auto &tensor_dec_r_t2m_mask_r2dst = output_tensor_.get_dec_r_t2m_mask_r2dst();
+  auto &tensor_dec_r_t2m_mask_r2dst_data = tensor_dec_r_t2m_mask_r2dst.data();
+  for (int i = 0; i < tensor_param_.N_t2m; i++) {
+    tensor_dec_r_t2m_mask_r2dst_data[i].resize(tensor_param_.N_a, 0.0);
+    std::fill(tensor_dec_r_t2m_mask_r2dst_data[i].begin(), tensor_dec_r_t2m_mask_r2dst_data[i].end(), 0.0);
+  }
 
   auto &tensor_dec_r_t2m = output_tensor_.get_dec_r_t2m();
   auto &tensor_dec_r_t2m_data = tensor_dec_r_t2m.data();
@@ -280,6 +318,18 @@ bool AgentInfoManager::data_preprocess() {
   for (int i = 0; i < tensor_param_.N_a2m; i++) {
     tensor_dec_r_a2m_data[i].resize(3, 0.0);
   }
+  auto &tensor_dec_r_a2m_mask_r2src = output_tensor_.get_dec_r_a2m_mask_r2src();
+  auto &tensor_dec_r_a2m_mask_r2src_data = tensor_dec_r_a2m_mask_r2src.data();
+  for (int i = 0; i < tensor_param_.N_a2m; i++) {
+    tensor_dec_r_a2m_mask_r2src_data[i].resize(tensor_param_.N_a, 0.0);
+    std::fill(tensor_dec_r_a2m_mask_r2src_data[i].begin(), tensor_dec_r_a2m_mask_r2src_data[i].end(), 0.0);
+  }
+  auto &tensor_dec_r_a2m_mask_r2dst = output_tensor_.get_dec_r_a2m_mask_r2dst();
+  auto &tensor_dec_r_a2m_mask_r2dst_data = tensor_dec_r_a2m_mask_r2dst.data();
+  for (int i = 0; i < tensor_param_.N_a2m; i++) {
+    tensor_dec_r_a2m_mask_r2dst_data[i].resize(tensor_param_.N_a, 0.0);
+    std::fill(tensor_dec_r_a2m_mask_r2dst_data[i].begin(), tensor_dec_r_a2m_mask_r2dst_data[i].end(), 0.0);
+  }
   auto &tensor_dec_num_a2m_multi = output_tensor_.get_dec_num_a2m_multi();
   auto &tensor_dec_num_a2m_multi_data = tensor_dec_num_a2m_multi.data();
   tensor_dec_num_a2m_multi_data[0] = 0;
@@ -289,6 +339,18 @@ bool AgentInfoManager::data_preprocess() {
       tensor_dec_edge_index_a2m_multi.data();
   tensor_dec_edge_index_a2m_multi_data[0].resize(tensor_param_.N_a2m_multi, 0);
   tensor_dec_edge_index_a2m_multi_data[1].resize(tensor_param_.N_a2m_multi, 0);
+  auto &tensor_dec_mask_r2src_a2m_multi = output_tensor_.get_dec_mask_r2src_a2m_multi();
+  auto &tensor_dec_mask_r2src_a2m_multi_data = tensor_dec_mask_r2src_a2m_multi.data();
+  for (int i = 0; i < tensor_param_.N_a2m_multi; i++) {
+    tensor_dec_mask_r2src_a2m_multi_data[i].resize(tensor_param_.N_a * tensor_param_.N_m, 0.0);
+    std::fill(tensor_dec_mask_r2src_a2m_multi_data[i].begin(), tensor_dec_mask_r2src_a2m_multi_data[i].end(), 0.0);
+  }
+  auto &tensor_dec_mask_r2dst_a2m_multi = output_tensor_.get_dec_mask_r2dst_a2m_multi();
+  auto &tensor_dec_mask_r2dst_a2m_multi_data = tensor_dec_mask_r2dst_a2m_multi.data();
+  for (int i = 0; i < tensor_param_.N_a2m_multi; i++) {
+    tensor_dec_mask_r2dst_a2m_multi_data[i].resize(tensor_param_.N_a * tensor_param_.N_m, 0.0);
+    std::fill(tensor_dec_mask_r2dst_a2m_multi_data[i].begin(), tensor_dec_mask_r2dst_a2m_multi_data[i].end(), 0.0);
+  }
 
   auto &tensor_dec_num_m2m = output_tensor_.get_dec_num_m2m();
   auto &tensor_dec_num_m2m_data = tensor_dec_num_m2m.data();
@@ -298,6 +360,18 @@ bool AgentInfoManager::data_preprocess() {
   auto &tensor_dec_edge_index_m2m_data = tensor_dec_edge_index_m2m.data();
   tensor_dec_edge_index_m2m_data[0].resize(tensor_param_.N_m2m, 0);
   tensor_dec_edge_index_m2m_data[1].resize(tensor_param_.N_m2m, 0);
+  auto &tensor_dec_mask_r2src_m2m = output_tensor_.get_dec_mask_r2src_m2m();
+  auto &tensor_dec_mask_r2src_m2m_data = tensor_dec_mask_r2src_m2m.data();
+  for (int i = 0; i < tensor_param_.N_m2m; i++) {
+    tensor_dec_mask_r2src_m2m_data[i].resize(tensor_param_.N_a * tensor_param_.N_m, 0.0);
+    std::fill(tensor_dec_mask_r2src_m2m_data[i].begin(), tensor_dec_mask_r2src_m2m_data[i].end(), 0.0);
+  }
+  auto &tensor_dec_mask_r2dst_m2m = output_tensor_.get_dec_mask_r2dst_m2m();
+  auto &tensor_dec_mask_r2dst_m2m_data = tensor_dec_mask_r2dst_m2m.data();
+  for (int i = 0; i < tensor_param_.N_m2m; i++) {
+    tensor_dec_mask_r2dst_m2m_data[i].resize(tensor_param_.N_a * tensor_param_.N_m, 0.0);
+    std::fill(tensor_dec_mask_r2dst_m2m_data[i].begin(), tensor_dec_mask_r2dst_m2m_data[i].end(), 0.0);
+  }
 
   auto& valid_num = output_tensor_.get_valid_num();
   valid_num = mask_num;
@@ -413,6 +487,10 @@ bool AgentInfoManager::data_preprocess() {
               tensor_agent_enc_edge_index_t_data
               [1][tensor_agent_enc_num_t_data[0]] =
                   i * tensor_param_.N_h + j;
+              tensor_agent_enc_mask_r2src_t_data
+              [tensor_agent_enc_num_t_data[0]][i * tensor_param_.N_h + k] = 1.0;
+              tensor_agent_enc_mask_r2dst_t_data
+              [tensor_agent_enc_num_t_data[0]][i * tensor_param_.N_h + j] = 1.0;
 
               //   // agent rel
               auto tmp_vec_x = tensor_agent_position_data[i][k][0] -
@@ -444,6 +522,10 @@ bool AgentInfoManager::data_preprocess() {
           tensor_dec_edge_index_t2m_data[0][tensor_dec_num_t2m_data[0]] =
               i * tensor_param_.N_h + j;
           tensor_dec_edge_index_t2m_data[1][tensor_dec_num_t2m_data[0]] = i;
+          tensor_dec_r_t2m_mask_r2src_data
+          [tensor_dec_num_t2m_data[0]][i * tensor_param_.N_h + j] = 1.0;
+          tensor_dec_r_t2m_mask_r2dst_data
+          [tensor_dec_num_t2m_data[0]][i] = 1.0;
           // decoder t2m multi
           for (int k = 0; k < tensor_param_.N_m; k++) {
             tensor_dec_edge_index_t2m_multi_data
@@ -452,6 +534,10 @@ bool AgentInfoManager::data_preprocess() {
             tensor_dec_edge_index_t2m_multi_data
             [1][tensor_dec_num_t2m_multi_data[0]] =
                 i * tensor_param_.N_m + k;
+            tensor_dec_mask_r2src_t2m_multi_data
+            [tensor_dec_num_t2m_multi_data[0]][i * tensor_param_.N_h + j] = 1.0;
+            tensor_dec_mask_r2dst_t2m_multi_data
+            [tensor_dec_num_t2m_multi_data[0]][i * tensor_param_.N_m + k] = 1.0;
             tensor_dec_num_t2m_multi_data[0]++;
           }
           auto vec_x = tensor_agent_position_data[i][j][0] - pos_m_x;
@@ -513,15 +599,27 @@ bool AgentInfoManager::data_preprocess() {
   auto &tensor_agent_enc_edge_index_a2a =
       output_tensor_.get_agent_enc_edge_index_a2a();
   auto &tensor_agent_enc_r_a2a = output_tensor_.get_agent_enc_r_a2a();
+  auto &tensor_agent_enc_mask_r2src_a2a = output_tensor_.get_agent_enc_mask_r2src_a2a();
+  auto &tensor_agent_enc_mask_r2dst_a2a = output_tensor_.get_agent_enc_mask_r2dst_a2a();
   auto &tensor_agent_enc_num_a2a_data = tensor_agent_enc_num_a2a.data();
   auto &tensor_agent_enc_edge_index_a2a_data =
       tensor_agent_enc_edge_index_a2a.data();
   auto &tensor_agent_enc_r_a2a_data = tensor_agent_enc_r_a2a.data();
+  auto &tensor_agent_enc_mask_r2src_a2a_data = tensor_agent_enc_mask_r2src_a2a.data();
+  auto &tensor_agent_enc_mask_r2dst_a2a_data = tensor_agent_enc_mask_r2dst_a2a.data();
   tensor_agent_enc_num_a2a_data[0] = 0;
   tensor_agent_enc_edge_index_a2a_data[0].resize(tensor_param_.N_a2a, 0);
   tensor_agent_enc_edge_index_a2a_data[1].resize(tensor_param_.N_a2a, 0);
   for (int i = 0; i < tensor_param_.N_a2a; i++) {
     tensor_agent_enc_r_a2a_data[i].resize(3, 0);
+  }
+  for (int i = 0; i < tensor_param_.N_a2a; i++) {
+    tensor_agent_enc_mask_r2src_a2a_data[i].resize(tensor_param_.N_h * tensor_param_.N_a, 0.0);
+    std::fill(tensor_agent_enc_mask_r2src_a2a_data[i].begin(), tensor_agent_enc_mask_r2src_a2a_data[i].end(), 0.0);
+  }
+  for (int i = 0; i < tensor_param_.N_a2a; i++) {
+    tensor_agent_enc_mask_r2dst_a2a_data[i].resize(tensor_param_.N_h * tensor_param_.N_a, 0.0);
+    std::fill(tensor_agent_enc_mask_r2dst_a2a_data[i].begin(), tensor_agent_enc_mask_r2dst_a2a_data[i].end(), 0.0);
   }
 
   auto& map_tensor_output = map_info_manager_ptr_->get_map_tensor_out();
@@ -551,6 +649,10 @@ bool AgentInfoManager::data_preprocess() {
             tensor_agent_enc_edge_index_a2a_data
             [1][tensor_agent_enc_num_a2a_data[0]] =
                 j * tensor_param_.N_a + k;
+            tensor_agent_enc_mask_r2src_a2a_data
+            [tensor_agent_enc_num_a2a_data[0]][j * tensor_param_.N_a + i] = 1.0;
+            tensor_agent_enc_mask_r2dst_a2a_data
+            [tensor_agent_enc_num_a2a_data[0]][j * tensor_param_.N_a + k] = 1.0;
             auto cos_heading = std::cos(tensor_agent_heading_data[k][j]);
             auto sin_heading = std::sin(tensor_agent_heading_data[k][j]);
             tensor_agent_enc_r_a2a_data[tensor_agent_enc_num_a2a_data[0]][0] =
@@ -597,6 +699,20 @@ bool AgentInfoManager::data_preprocess() {
     tensor_dec_r_pl2m_data[i].resize(3, 0.0);
   }
 
+  auto &tensor_dec_mask_r2src_pl2m_multi = output_tensor_.get_dec_mask_r2src_pl2m_multi();
+  auto &tensor_dec_mask_r2src_pl2m_multi_data = tensor_dec_mask_r2src_pl2m_multi.data();
+    for (int i = 0; i < tensor_param_.N_pl2m_multi; i++) {
+    tensor_dec_mask_r2src_pl2m_multi_data[i].resize(tensor_param_.N_pl * tensor_param_.N_m, 0.0);
+    std::fill(tensor_dec_mask_r2src_pl2m_multi_data[i].begin(), tensor_dec_mask_r2src_pl2m_multi_data[i].end(), 0.0);
+  }
+
+  auto &tensor_dec_mask_r2dst_pl2m_multi = output_tensor_.get_dec_mask_r2dst_pl2m_multi();
+  auto &tensor_dec_mask_r2dst_pl2m_multi_data = tensor_dec_mask_r2dst_pl2m_multi.data();
+    for (int i = 0; i < tensor_param_.N_pl2m_multi; i++) {
+    tensor_dec_mask_r2dst_pl2m_multi_data[i].resize(tensor_param_.N_a * tensor_param_.N_m, 0.0);
+    std::fill(tensor_dec_mask_r2dst_pl2m_multi_data[i].begin(), tensor_dec_mask_r2dst_pl2m_multi_data[i].end(), 0.0);
+  }
+
   // decoder agent a2m
   for (int i = 0; i < tensor_param_.N_a; i++) {
     if (tensor_agent_mask_data[i][tensor_param_.N_h - 1]) {
@@ -613,6 +729,8 @@ bool AgentInfoManager::data_preprocess() {
           if (dis_tmp < param_.a2m_radius) {
             tensor_dec_edge_index_a2m_data[0][tensor_dec_num_a2m_data[0]] = i;
             tensor_dec_edge_index_a2m_data[1][tensor_dec_num_a2m_data[0]] = j;
+            tensor_dec_r_a2m_mask_r2src_data[tensor_dec_num_a2m_data[0]][i] = 1.0;
+            tensor_dec_r_a2m_mask_r2dst_data[tensor_dec_num_a2m_data[0]][j] = 1.0;
             float cos_heading =
                 std::cos(tensor_agent_heading_data[j][tensor_param_.N_h - 1]);
             float sin_heading =
@@ -629,6 +747,8 @@ bool AgentInfoManager::data_preprocess() {
             tensor_dec_num_a2m_data[0]++;
             tensor_dec_edge_index_a2m_data[0][tensor_dec_num_a2m_data[0]] = j;
             tensor_dec_edge_index_a2m_data[1][tensor_dec_num_a2m_data[0]] = i;
+            tensor_dec_r_a2m_mask_r2src_data[tensor_dec_num_a2m_data[0]][j] = 1.0;
+            tensor_dec_r_a2m_mask_r2dst_data[tensor_dec_num_a2m_data[0]][i] = 1.0;
             float cos_heading_i =
                 std::cos(tensor_agent_heading_data[i][tensor_param_.N_h - 1]);
             float sin_heading_i =
@@ -658,6 +778,8 @@ bool AgentInfoManager::data_preprocess() {
           tensor_dec_edge_index_pl2m_multi_data[0][tensor_dec_num_pl2m_multi_data[0]] = j;
           // agent index
           tensor_dec_edge_index_pl2m_multi_data[1][tensor_dec_num_pl2m_multi_data[0]] = i;
+          tensor_dec_mask_r2src_pl2m_multi_data[tensor_dec_num_pl2m_multi_data[0]][j] = 1.0;
+          tensor_dec_mask_r2dst_pl2m_multi_data[tensor_dec_num_pl2m_multi_data[0]][i] = 1.0;
           tensor_dec_r_pl2m_data[tensor_dec_num_pl2m_multi_data[0]][0] = dis_tmp;
           float cos_heading = std::cos(tensor_agent_heading_data[i][tensor_param_.N_h - 1]);
           float sin_heading = std::sin(tensor_agent_heading_data[i][tensor_param_.N_h - 1]);
@@ -683,6 +805,10 @@ bool AgentInfoManager::data_preprocess() {
       tensor_dec_edge_index_a2m_multi_data[1][j +
           i * tensor_dec_num_a2m_data[0]] =
           tensor_dec_edge_index_a2m_data[1][j] + i * tensor_param_.N_a;
+      tensor_dec_mask_r2src_a2m_multi_data[j +
+          i * tensor_dec_num_a2m_data[0]][tensor_dec_edge_index_a2m_data[0][j] + i * tensor_param_.N_a] = 1.0;
+      tensor_dec_mask_r2dst_a2m_multi_data[j +
+          i * tensor_dec_num_a2m_data[0]][tensor_dec_edge_index_a2m_data[1][j] + i * tensor_param_.N_a] = 1.0;
     }
   }
   // fill decoder edge a2m multi index use the front element
@@ -715,6 +841,10 @@ bool AgentInfoManager::data_preprocess() {
       // agent index
       tensor_dec_edge_index_pl2m_multi_data[1][j + i * tensor_param_.N_pl2m] = 
         tensor_dec_edge_index_pl2m_multi_data[1][j] + i * tensor_param_.N_a;
+      tensor_dec_mask_r2src_pl2m_multi_data[j + i * tensor_param_.N_pl2m]
+      [tensor_dec_edge_index_pl2m_multi_data[0][j] + i * tensor_param_.N_pl] = 1.0;
+      tensor_dec_mask_r2dst_pl2m_multi_data[j + i * tensor_param_.N_pl2m]
+      [tensor_dec_edge_index_pl2m_multi_data[1][j] + i * tensor_param_.N_a] = 1.0;
     }
   }
   tensor_dec_num_pl2m_multi_data[0] = tensor_dec_num_pl2m_multi_data[0] * tensor_param_.N_m;
@@ -743,6 +873,12 @@ bool AgentInfoManager::data_preprocess() {
             tensor_param_.N_m +
             j * tensor_param_.N_m + k] =
             i * tensor_param_.N_m + k;
+        tensor_dec_mask_r2src_m2m_data[i * tensor_param_.N_m *
+            tensor_param_.N_m +
+            j * tensor_param_.N_m + k][i * tensor_param_.N_m + j] = 1.0;
+        tensor_dec_mask_r2dst_m2m_data[i * tensor_param_.N_m *
+            tensor_param_.N_m +
+            j * tensor_param_.N_m + k][i * tensor_param_.N_m + k] = 1.0;
       }
     }
   }
@@ -785,6 +921,19 @@ bool AgentInfoManager::data_preprocess() {
     tensor_agent_enc_r_pl2a_data[i].resize(3, 0.0);
   }
 
+  auto& tensor_agent_enc_mask_r2src_pl2a = output_tensor_.get_agent_enc_mask_r2src_pl2a();
+  auto& tensor_agent_enc_mask_r2src_pl2a_data = tensor_agent_enc_mask_r2src_pl2a.data();
+  for (int i = 0; i < tensor_param_.N_pl2a; i++) {
+    tensor_agent_enc_mask_r2src_pl2a_data[i].resize(tensor_param_.N_h * tensor_param_.N_pl, 0.0);
+    std::fill(tensor_agent_enc_mask_r2src_pl2a_data[i].begin(), tensor_agent_enc_mask_r2src_pl2a_data[i].end(), 0.0);
+  }
+
+  auto& tensor_agent_enc_mask_r2dst_pl2a = output_tensor_.get_agent_enc_mask_r2dst_pl2a();
+  auto& tensor_agent_enc_mask_r2dst_pl2a_data = tensor_agent_enc_mask_r2dst_pl2a.data();
+  for (int i = 0; i < tensor_param_.N_pl2a; i++) {
+    tensor_agent_enc_mask_r2dst_pl2a_data[i].resize(tensor_param_.N_h * tensor_param_.N_a, 0.0);
+    std::fill(tensor_agent_enc_mask_r2dst_pl2a_data[i].begin(), tensor_agent_enc_mask_r2dst_pl2a_data[i].end(), 0.0);
+  }
 
   for(int i = 0; i < tensor_param_.N_a; i++){
     for (int j = 0; j < tensor_param_.N_h; j++){
@@ -806,6 +955,8 @@ bool AgentInfoManager::data_preprocess() {
             tensor_agent_enc_edge_index_pl2a_data[0][tensor_agent_enc_num_pl2a_data[0]] = j * tensor_param_.N_pl + k;
             // agent index
             tensor_agent_enc_edge_index_pl2a_data[1][tensor_agent_enc_num_pl2a_data[0]] = j * tensor_param_.N_a + i;
+            tensor_agent_enc_mask_r2src_pl2a_data[tensor_agent_enc_num_pl2a_data[0]][j * tensor_param_.N_pl + k] = 1.0;
+            tensor_agent_enc_mask_r2dst_pl2a_data[tensor_agent_enc_num_pl2a_data[0]][j * tensor_param_.N_a + i] = 1.0;
             float cos_heading = std::cos(tensor_agent_heading_data[i][j]);
             float sin_heading = std::sin(tensor_agent_heading_data[i][j]);
             tensor_agent_enc_r_pl2a_data[tensor_agent_enc_num_pl2a_data[0]][0] = dis_tmp;
