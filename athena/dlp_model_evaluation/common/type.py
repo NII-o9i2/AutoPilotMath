@@ -3,6 +3,14 @@ class Point2D:
         self.x = x
         self.y = y
 
+class Segment:
+    def __init__(self, start=None, end=None):
+        self.start = start if start else Point2D()
+        self.end = end if end else Point2D()
+
+    def __repr__(self):
+        return f"Segment(start=({self.start.x}, {self.start.y}), end=({self.end.x}, {self.end.y}))"
+
 class PlanningPoint:
     def __init__(self, position=None, theta=0.0, velocity=0.0, acceleration=0.0, 
                  omega=0.0, curva=0.0, jerk=0.0, omega_dot=0.0):

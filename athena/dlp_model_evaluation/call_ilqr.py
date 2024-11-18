@@ -1,18 +1,13 @@
-import numpy as np
 import os
 import sys
+import json
+import numpy as np
+from common.type import *
+
 current_directory = os.getcwd()
-# print(current_directory)
 relative_path1 = '../../algorithm/build/env_simulator'
 relative_path2 = '../../algorithm/build/cilqr'
 
-# debug
-# relative_path1 = './algorithm/build/env_simulator'
-# relative_path2 = './algorithm/build/cilqr'
-
-# jupyter
-# relative_path1 = '../../../algorithm/build/env_simulator'
-# relative_path2 = '../../../algorithm/build/cilqr'
 file_path1 = os.path.join(current_directory, relative_path1)
 file_path2 = os.path.join(current_directory, relative_path2)
 sys.path.append(file_path1)
@@ -20,14 +15,6 @@ sys.path.append(file_path2)
 import pybind_env_simulator
 import pybind_ilqr
 
-from bokeh.plotting import figure, show
-from bokeh.io import output_notebook
-from bokeh.models import WheelZoomTool
-import json
-from IPython.display import display, HTML
-
-sys.path.append("..")
-from common.type import *
 
 class CallILQR:
     def __init__(self, ref_pts, ego_origin):
@@ -63,7 +50,7 @@ class CallILQR:
         lat_debug = self.motion_.get_lat_debug_tree()
         self.processed_trajs_ = []
         j = 0
-        for traj_tree in traj_trees:  
+        for traj_tree in traj_trees:
             traj_new_list = []
             index = 0
             for traj in traj_tree:
@@ -82,7 +69,7 @@ class CallILQR:
                 index = index + 1
                 traj_new_list.append(pt)
             self.processed_trajs_.append(traj_new_list)
-            j = j+1        
+            j = j + 1
         return self.processed_trajs_
 
     def get_plot_data(self):
@@ -106,8 +93,8 @@ class CallILQR:
         self.plot_data_['pts'] = pts
         self.plot_data_['obs'] = obs
         self.plot_data_['planning_init'] = planning_init
-        self.plot_data_['traj_list'] = traj_list      
+        self.plot_data_['traj_list'] = traj_list
         return self.plot_data_
-    
+
     def get_ref_pts(self):
         return self.ref_pts_

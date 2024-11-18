@@ -244,15 +244,15 @@ void MapInfoManager::update_tensor() {
   auto& tensor_map_enc_mask_r2src_pt2pl = out_map_tensor_.get_map_enc_mask_r2src_pt2pl();
   auto& tensor_map_enc_mask_r2src_pt2pl_data = tensor_map_enc_mask_r2src_pt2pl.data();
   for (int i = 0; i < tensor_param_.N_pt2pl; i++) {
-    tensor_map_enc_mask_r2src_pt2pl_data[i].resize(tensor_param_.N_pt, 0.0);
-    std::fill(tensor_map_enc_mask_r2src_pt2pl_data[i].begin(), tensor_map_enc_mask_r2src_pt2pl_data[i].end(), 0.0);
+    tensor_map_enc_mask_r2src_pt2pl_data[i].resize(tensor_param_.N_pt, 0);
+    std::fill(tensor_map_enc_mask_r2src_pt2pl_data[i].begin(), tensor_map_enc_mask_r2src_pt2pl_data[i].end(), 0);
   }
 
   auto& tensor_map_enc_mask_r2dst_pt2pl = out_map_tensor_.get_map_enc_mask_r2dst_pt2pl();
   auto& tensor_map_enc_mask_r2dst_pt2pl_data = tensor_map_enc_mask_r2dst_pt2pl.data();
   for (int i = 0; i < tensor_param_.N_pt2pl; i++) {
-    tensor_map_enc_mask_r2dst_pt2pl_data[i].resize(tensor_param_.N_pl, 0.0);
-    std::fill(tensor_map_enc_mask_r2dst_pt2pl_data[i].begin(), tensor_map_enc_mask_r2dst_pt2pl_data[i].end(), 0.0);
+    tensor_map_enc_mask_r2dst_pt2pl_data[i].resize(tensor_param_.N_pl, 0);
+    std::fill(tensor_map_enc_mask_r2dst_pt2pl_data[i].begin(), tensor_map_enc_mask_r2dst_pt2pl_data[i].end(), 0);
   }
 
 
@@ -269,8 +269,8 @@ void MapInfoManager::update_tensor() {
     for (int j = 0; j < polygon_list_[i].len(); j++){
       tensor_map_enc_edge_index_pt2pl_data[0][tensor_map_enc_num_pt2pl_data[0]] = tensor_map_enc_num_pt2pl_data[0];
       tensor_map_enc_edge_index_pt2pl_data[1][tensor_map_enc_num_pt2pl_data[0]] = i;
-      tensor_map_enc_mask_r2src_pt2pl_data[tensor_map_enc_num_pt2pl_data[0]][tensor_map_enc_num_pt2pl_data[0]] = 1.0;
-      tensor_map_enc_mask_r2dst_pt2pl_data[tensor_map_enc_num_pt2pl_data[0]][i] = 1.0;
+      tensor_map_enc_mask_r2src_pt2pl_data[tensor_map_enc_num_pt2pl_data[0]][tensor_map_enc_num_pt2pl_data[0]] = 1;
+      tensor_map_enc_mask_r2dst_pt2pl_data[tensor_map_enc_num_pt2pl_data[0]][i] = 1;
       float vec_x = tensor_points_position_data[tensor_map_enc_num_pt2pl_data[0]][0] - tensor_polygon_position_data[i][0];
       float vec_y = tensor_points_position_data[tensor_map_enc_num_pt2pl_data[0]][1] - tensor_polygon_position_data[i][1];
       float cos_pl = std::cos(tensor_polygon_orient_data[i]);
@@ -310,15 +310,15 @@ void MapInfoManager::update_tensor() {
   auto& tensor_map_enc_mask_r2src_pl2pl = out_map_tensor_.get_map_enc_mask_r2src_pl2pl();
   auto& tensor_map_enc_mask_r2src_pl2pl_data = tensor_map_enc_mask_r2src_pl2pl.data();
   for (int i = 0; i < tensor_param_.N_pl2pl; i++) {
-    tensor_map_enc_mask_r2src_pl2pl_data[i].resize(tensor_param_.N_pl, 0.0);
-    std::fill(tensor_map_enc_mask_r2src_pl2pl_data[i].begin(), tensor_map_enc_mask_r2src_pl2pl_data[i].end(), 0.0);
+    tensor_map_enc_mask_r2src_pl2pl_data[i].resize(tensor_param_.N_pl, 0);
+    std::fill(tensor_map_enc_mask_r2src_pl2pl_data[i].begin(), tensor_map_enc_mask_r2src_pl2pl_data[i].end(), 0);
   }
 
   auto& tensor_map_enc_mask_r2dst_pl2pl = out_map_tensor_.get_map_enc_mask_r2dst_pl2pl();
   auto& tensor_map_enc_mask_r2dst_pl2pl_data = tensor_map_enc_mask_r2dst_pl2pl.data();
   for (int i = 0; i < tensor_param_.N_pl2pl; i++) {
-    tensor_map_enc_mask_r2dst_pl2pl_data[i].resize(tensor_param_.N_pl, 0.0);
-    std::fill(tensor_map_enc_mask_r2dst_pl2pl_data[i].begin(), tensor_map_enc_mask_r2dst_pl2pl_data[i].end(), 0.0);
+    tensor_map_enc_mask_r2dst_pl2pl_data[i].resize(tensor_param_.N_pl, 0);
+    std::fill(tensor_map_enc_mask_r2dst_pl2pl_data[i].begin(), tensor_map_enc_mask_r2dst_pl2pl_data[i].end(), 0);
   }
 
   // map pl2pl edge
@@ -365,8 +365,8 @@ void MapInfoManager::update_tensor() {
         auto pl_2_pl_type = types[d];
         tensor_map_enc_edge_index_pl2pl_data[0][tensor_map_enc_num_pl2pl_data[0]] = first_id;
         tensor_map_enc_edge_index_pl2pl_data[1][tensor_map_enc_num_pl2pl_data[0]] = second_id;
-        tensor_map_enc_mask_r2src_pl2pl_data[tensor_map_enc_num_pl2pl_data[0]][first_id] = 1.0;
-        tensor_map_enc_mask_r2dst_pl2pl_data[tensor_map_enc_num_pl2pl_data[0]][second_id] = 1.0;
+        tensor_map_enc_mask_r2src_pl2pl_data[tensor_map_enc_num_pl2pl_data[0]][first_id] = 1;
+        tensor_map_enc_mask_r2dst_pl2pl_data[tensor_map_enc_num_pl2pl_data[0]][second_id] = 1;
         tensor_map_enc_type_pl2pl_data[tensor_map_enc_num_pl2pl_data[0]] = pl_2_pl_type;
         float vec_x = polygon_list_[first_id].polygon_position().data()[0][0] - polygon_list_[second_id].polygon_position().data()[0][0];
         float vec_y = polygon_list_[first_id].polygon_position().data()[0][1] - polygon_list_[second_id].polygon_position().data()[0][1];
