@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC -std=c++14 -fPIC -O2 -flto -shared  -o pybind_ilqr.cpython-310-x86_64-linux-gnu.so CMakeFiles/pybind_ilqr.dir/ilqr_pybind.cpp.o  -Wl,-rpath,/home/SENSETIME/fengxiaotong/ws/rscl_aarch64/senseauto-pilot-decision/common_math/algorithm/build/math_common libilqr_math.a ../env_simulator/libenv_simulator.a ../math_common/libmath_common.so 

@@ -1,0 +1,12 @@
+cmake-build-debug/
+.idea/
+.DS_Store
+algorithm/cmake-build-debug/
+algorithm/build/
+algorithm/.virtual_documents/
+algorithm/cilqr/.ipynb_checkpoints/
+algorithm/cilqr/notebook/.ipynb_checkpoints/
+
+thirdparty/eigen/build/
+*.pyc
+*.layout

@@ -27,10 +27,6 @@
 #define eigen_internal_assert(X) assert(X);
 #endif
 
-#ifdef EIGEN_BDCSVD_DEBUG_VERBOSE
-#include <iostream>
-#endif
-
 namespace Eigen {
 
 #ifdef EIGEN_BDCSVD_DEBUG_VERBOSE
@@ -176,7 +172,7 @@ public:
 
   void setSwitchSize(int s) 
   {
-    eigen_assert(s>=3 && "BDCSVD the size of the algo switch has to be at least 3.");
+    eigen_assert(s>3 && "BDCSVD the size of the algo switch has to be greater than 3");
     m_algoswap = s;
   }
  
@@ -408,7 +404,7 @@ void BDCSVD<MatrixType>::structured_update(Block<MatrixXr,Dynamic,Dynamic> A, co
 //@param lastCol : The Index of the last column of the submatrix of m_computed and for m_naiveU; 
 // lastCol + 1 - firstCol is the size of the submatrix.
 //@param firstRowW : The Index of the first row of the matrix W that we are to change. (see the reference paper section 1 for more information on W)
-//@param firstColW : Same as firstRowW with the column.
+//@param firstRowW : Same as firstRowW with the column.
 //@param shift : Each time one takes the left submatrix, one must add 1 to the shift. Why? Because! We actually want the last column of the U submatrix 
 // to become the first column (*coeff) and to shift all the other columns to the right. There are more details on the reference paper.
 template<typename MatrixType>
@@ -903,7 +899,7 @@ void BDCSVD<MatrixType>::computeSingVals(const ArrayRef& col0, const ArrayRef& d
       RealScalar fLeft = secularEq(leftShifted, col0, diag, perm, diagShifted, shift);
       eigen_internal_assert(fLeft<Literal(0));
 
-#if defined EIGEN_BDCSVD_DEBUG_VERBOSE || defined EIGEN_BDCSVD_SANITY_CHECKS || defined EIGEN_INTERNAL_DEBUGGING
+#if defined EIGEN_INTERNAL_DEBUGGING || defined EIGEN_BDCSVD_SANITY_CHECKS
       RealScalar fRight = secularEq(rightShifted, col0, diag, perm, diagShifted, shift);
 #endif
 
@@ -978,8 +974,8 @@ void BDCSVD<MatrixType>::computeSingVals(const ArrayRef& col0, const ArrayRef& d
     // perturb singular value slightly if it equals diagonal entry to avoid division by zero later
     // (deflation is supposed to avoid this from happening)
     // - this does no seem to be necessary anymore -
-    // if (singVals[k] == left) singVals[k] *= 1 + NumTraits<RealScalar>::epsilon();
-    // if (singVals[k] == right) singVals[k] *= 1 - NumTraits<RealScalar>::epsilon();
+//     if (singVals[k] == left) singVals[k] *= 1 + NumTraits<RealScalar>::epsilon();
+//     if (singVals[k] == right) singVals[k] *= 1 - NumTraits<RealScalar>::epsilon();
   }
 }
 
@@ -1033,14 +1029,7 @@ void BDCSVD<MatrixType>::perturbCol0
             std::cout << "  " << "j=" << j << "\n";
           }
 #endif
-          // Avoid index out of bounds.
-          // Will end up setting zhat(k) = 0.
-          if (l == 0) {
-            m_info = NumericalIssue;
-            prod = 0;
-            break;
-          }
-          Index j = i<k ? i : l > 0 ? perm(l-1) : i;
+          Index j = i<k ? i : perm(l-1);
 #ifdef EIGEN_BDCSVD_SANITY_CHECKS
           if(!(dk!=Literal(0) || diag(i)!=Literal(0)))
           {
@@ -1253,8 +1242,8 @@ void BDCSVD<MatrixType>::deflation(Eigen::Index firstCol, Eigen::Index lastCol, 
 #endif
   {
     // Check for total deflation
-    // If we have a total deflation, then we have to consider col0(0)==diag(0) as a singular value during sorting.
-    const bool total_deflation = (col0.tail(length-1).array().abs()<considerZero).all();
+    // If we have a total deflation, then we have to consider col0(0)==diag(0) as a singular value during sorting
+    bool total_deflation = (col0.tail(length-1).array()<considerZero).all();
     
     // Sort the diagonal entries, since diag(1:k-1) and diag(k:length) are already sorted, let's do a sorted merge.
     // First, compute the respective permutation.

@@ -91,18 +91,8 @@ template<> struct packet_traits<std::complex<double> >  : default_packet_traits
   };
 };
 
-template<> struct unpacket_traits<Packet2cf> {
-  typedef std::complex<float>  type;
-  enum {size=2, alignment=Aligned16, vectorizable=true, masked_load_available=false, masked_store_available=false};
-  typedef Packet2cf half;
-  typedef Packet4f as_real;
-};
-template<> struct unpacket_traits<Packet1cd> {
-  typedef std::complex<double> type;
-  enum {size=1, alignment=Aligned16, vectorizable=true, masked_load_available=false, masked_store_available=false};
-  typedef Packet1cd half;
-  typedef Packet2d as_real;
-};
+template<> struct unpacket_traits<Packet2cf> { typedef std::complex<float>  type; enum {size=2, alignment=Aligned16, vectorizable=true, masked_load_available=false, masked_store_available=false}; typedef Packet2cf half; };
+template<> struct unpacket_traits<Packet1cd> { typedef std::complex<double> type; enum {size=1, alignment=Aligned16, vectorizable=true, masked_load_available=false, masked_store_available=false}; typedef Packet1cd half; };
 
 /* Forward declaration */
 EIGEN_STRONG_INLINE void ptranspose(PacketBlock<Packet2cf,2>& kernel);
@@ -160,7 +150,7 @@ template<> EIGEN_STRONG_INLINE void prefetch<std::complex<double> >(const std::c
 
 template<> EIGEN_STRONG_INLINE std::complex<double>  pfirst<Packet1cd>(const Packet1cd& a)
 {
-  EIGEN_ALIGN16 std::complex<double> res;
+  std::complex<double> EIGEN_ALIGN16 res;
   pstore<std::complex<double> >(&res, a);
 
   return res;
@@ -205,7 +195,7 @@ template<> EIGEN_STRONG_INLINE void pstoreu<std::complex<float> >(std::complex<f
 
 template<> EIGEN_STRONG_INLINE std::complex<float>  pfirst<Packet2cf>(const Packet2cf& a)
 {
-  EIGEN_ALIGN16 std::complex<float> res[2];
+  std::complex<float> EIGEN_ALIGN16 res[2];
   pstore<std::complex<float> >(res, a);
 
   return res[0];
@@ -235,14 +225,14 @@ template<> EIGEN_STRONG_INLINE Packet2cf pset1<Packet2cf>(const std::complex<flo
 
 template<> EIGEN_DEVICE_FUNC inline Packet2cf pgather<std::complex<float>, Packet2cf>(const std::complex<float>* from, Index stride)
 {
-  EIGEN_ALIGN16 std::complex<float> af[2];
+  std::complex<float> EIGEN_ALIGN16 af[2];
   af[0] = from[0*stride];
   af[1] = from[1*stride];
   return pload<Packet2cf>(af);
 }
 template<> EIGEN_DEVICE_FUNC inline void pscatter<std::complex<float>, Packet2cf>(std::complex<float>* to, const Packet2cf& from, Index stride)
 {
-  EIGEN_ALIGN16 std::complex<float> af[2];
+  std::complex<float> EIGEN_ALIGN16 af[2];
   pstore<std::complex<float> >((std::complex<float> *) af, from);
   to[0*stride] = af[0];
   to[1*stride] = af[1];

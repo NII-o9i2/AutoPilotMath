@@ -440,8 +440,9 @@ void tridiagonalization_inplace(MatrixType& mat, DiagonalType& diag, SubDiagonal
 template<typename MatrixType, int Size, bool IsComplex>
 struct tridiagonalization_inplace_selector
 {
+  typedef typename Tridiagonalization<MatrixType>::CoeffVectorType CoeffVectorType;
   typedef typename Tridiagonalization<MatrixType>::HouseholderSequenceType HouseholderSequenceType;
-  template<typename DiagonalType, typename SubDiagonalType, typename CoeffVectorType>
+  template<typename DiagonalType, typename SubDiagonalType>
   static EIGEN_DEVICE_FUNC
       void run(MatrixType& mat, DiagonalType& diag, SubDiagonalType& subdiag, CoeffVectorType& hCoeffs, bool extractQ)
   {

@@ -55,10 +55,10 @@ void Obstacle::construct(const LaneManager &lane_manager) {
       trajectory_points[1].position.y - trajectory_points[0].position.y;
   double delta_x =
       trajectory_points[1].position.x - trajectory_points[0].position.x;
-  if (delta_x * delta_x + delta_y + delta_y < 1e-3) {
+  if (delta_x * delta_x + delta_y * delta_y < 1e-3) {
     trajectory_points.front().theta = init_theta_;
   } else {
-    if (delta_x < 1e-3) {
+    if (std::fabs(delta_x) < 1e-3) {
       trajectory_points.front().theta = delta_y > 0 ? M_PI * 0.5 : -M_PI * 0.5;
     } else {
       trajectory_points.front().theta = std::atan(delta_y / delta_x);
@@ -69,13 +69,13 @@ void Obstacle::construct(const LaneManager &lane_manager) {
         trajectory_points[i + 1].position.y - trajectory_points[i].position.y;
     double delta_x =
         trajectory_points[i + 1].position.x - trajectory_points[i].position.x;
-    if (delta_x * delta_x + delta_y + delta_y < 1e-3) {
+    if (delta_x * delta_x + delta_y * delta_y < 1e-3) {
       trajectory_points[i].theta = trajectory_points[i - 1].theta;
     } else {
-      if (delta_x < 1e-3) {
+      if (std::fabs(delta_x) < 1e-3) {
         trajectory_points[i].theta = delta_y > 0 ? M_PI * 0.5 : -M_PI * 0.5;
       } else {
-        trajectory_points[i].theta = std::atan(delta_y / delta_x);
+        trajectory_points[i].theta = std::atan2(delta_y , delta_x);
       }
     }
   }

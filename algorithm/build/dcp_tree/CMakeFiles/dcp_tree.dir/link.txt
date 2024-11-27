@@ -1,2 +1,0 @@
-/usr/bin/ar qc libdcp_tree.a  CMakeFiles/dcp_tree.dir/track_simulator.cpp.o CMakeFiles/dcp_tree.dir/dcp_tree.cpp.o CMakeFiles/dcp_tree.dir/dcp_tree_mgr.cpp.o CMakeFiles/dcp_tree.dir/main_test.cpp.o
-/usr/bin/ranlib libdcp_tree.a
